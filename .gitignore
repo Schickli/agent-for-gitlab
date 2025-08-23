@@ -7,3 +7,5 @@ logs/
 # TypeScript build cache
 *.tsbuildinfo
 .tsbuildinfo
+
+*.env

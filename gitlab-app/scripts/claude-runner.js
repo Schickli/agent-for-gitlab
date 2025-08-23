@@ -5,9 +5,9 @@
  * This script is executed within GitLab CI when triggered by @claude mentions
  */
 
-const { execSync } = require("child_process");
-const fs = require("fs");
-const https = require("https");
+import { execSync } from "child_process";
+import fs from "fs";
+import https from "https";
 
 // GitLab API configuration
 const GITLAB_URL = process.env.CI_SERVER_URL || "https://gitlab.com";
