@@ -122,7 +122,7 @@ async function main() {
     }
 
     // Build Claude command
-    const claudeArgsString =
+    let claudeArgsString =
       "npx" +
       " @anthropic-ai/claude-code" +
       " --model "
