@@ -134,7 +134,7 @@ async function main() {
 
     // Add custom instructions if provided
     if (process.env.CLAUDE_INSTRUCTIONS) {
-      claudeArgsString = + ` --append-system-prompt ${process.env.CLAUDE_INSTRUCTIONS}`
+      claudeArgsString = claudeArgsString + ` --append-system-prompt ${process.env.CLAUDE_INSTRUCTIONS}`
     }
 
     // Execute Claude Code
