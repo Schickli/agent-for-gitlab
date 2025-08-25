@@ -45,8 +45,6 @@ export async function run() {
 
     const model = process.env.AI_MODEL || "sonnet";
     const aiArgs = [
-      "--yes",
-      "@anthropic-ai/ai-code",
       "--model",
       model,
       "-p",
@@ -61,7 +59,7 @@ export async function run() {
     logger.start("Running AI Code...");
     let aiOutput = "";
     try {
-      aiOutput = execFileSync("npx", aiArgs, {
+      aiOutput = execFileSync("claude", aiArgs, {
         encoding: "utf8",
         stdio: ["pipe", "pipe", "pipe"],
         maxBuffer: 10 * 1024 * 1024,
