@@ -23,6 +23,7 @@ const context = {
   author: process.env.CLAUDE_AUTHOR,
   note: process.env.CLAUDE_NOTE,
   projectPath: process.env.CLAUDE_PROJECT_PATH,
+  triggerPhrase: process.env.TRIGGER_PHRASE
 };
 
 /**
@@ -87,7 +88,10 @@ async function postComment(message) {
  */
 function extractPrompt(note) {
   if (typeof note !== "string") return "";
-  const match = note.match(/@claude\s+([\s\S]*)/i);
+
+  const keyWord = context.triggerPhrase ?? "@claude"
+  const regex = new RegExp(`${keyWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s+([\\s\\S]*)`, "i");
+  const match = note.match(regex);
   return match ? match[1].trim() : "";
 }
 

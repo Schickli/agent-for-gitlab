@@ -10,6 +10,7 @@ variables:
     You are a helpful assistant that fixes bugs and implements features.
     Always write tests for your changes.
     Follow the project's coding standards.
+  TRIGGER_PHRASE: "@AI"
 
 claude_webhook_handler:
   stage: claude

@@ -43,17 +43,18 @@ TODO
 
 #### Create Pipeline
 
-You will need to add the following CI/CD Variables in your Gitlab Pipeline setup:
+You will need to add the following CI/CD Variables in your Gitlab Pipeline setup: (Add them under `Settings/CI/CD/Variables`)
 
 - `ANTHROPIC_API_KEY`: Your Anthropic API Key
 - `GITLAB_TOKEN`: Your GitLab Personal Access Token (with `api`, `read_repository`, `write_repository` permissions)
 - `GITLAB_USERNAME`: Your GitLab Username (of the used account)
 
+**Important** The variables should not be `Protected variables`
 Copy the `.gitlab-ci.yml` file in `gitlab-utils` to your project root or add the important parts to you existing configuration.
 
 ### Gitlab Webhook App
 
-If the pre-built image is not accessible, you can build it locally:
+If the pre-built image is not accessible, you can build it locally: (When using it locally, you must expose your local port 3000 to the internet using either ngrok or the built-in port forwarding from VS Code. You must also change it in the webhook configuration.)
 
 #### Only the Gitlab Webhook App Container
 
@@ -109,7 +110,7 @@ Run the following steps in the `gitlab-app` directory:
 - `RATE_LIMIT_WINDOW`: Time window in seconds (default: 900)
 - `CANCEL_OLD_PIPELINES`: Cancel older pending pipelines (default: true)
 - `ADMIN_TOKEN`: Optional admin token for /admin endpoints
-- `TRIGGER_PHRASE`: Custom trigger phrase instead of @claude (default: @claude)
+- `TRIGGER_PHRASE`: Custom trigger phrase instead of @claude (default: @claude) **Set also in the Pipeline**
 - `BRANCH_PREFIX`: Prefix for branches created by Claude (default: claude)
 
 ### Pipeline Variables (.gitlab-ci.yml)
@@ -118,6 +119,7 @@ When a pipeline is triggered, these variables are available:
 
 - `CLAUDE_MODEL`: The model used for Claude (default: "sonnet")
 - `CLAUDE_INSTRUCTIONS`: Instructions for Claude's behavior
+- `TRIGGER_PHRASE`: The trigger phrase used (e.g., "@claude") **Set also in the .env file**
 
 ### CI/CD Variables
 
