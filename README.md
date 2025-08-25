@@ -142,7 +142,7 @@ When a pipeline is triggered, these variables are available:
 - `TRIGGER_PHRASE`: The trigger phrase used (e.g., "@ai") **Set also in the .env file**
 - `AI_AGENT_IMAGE`: The Docker image for the AI agent
 
-### CI/CD Variables
+### Gitlab CI/CD Variables
 
 - `ANTHROPIC_API_KEY`: Your Anthropic API Key
 - `GITLAB_TOKEN`: Your GitLab Personal Access Token (with `api`, `read_repository`, `write_repository` permissions)
