@@ -1,15 +1,13 @@
 {
   "name": "gitlab-claude-webhook",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Lightweight GitLab webhook server for Claude pipeline triggers",
   "type": "module",
   "main": "src/index.ts",
   "scripts": {
     "start": "bun run src/index.ts",
     "dev": "bun --watch src/index.ts",
-    "typecheck": "tsc --noEmit",
-    "build:runner": "bun build src/pipeline-runner.ts --target=node --outfile=dist/pipeline-runner.js",
-    "runner": "node dist/pipeline-runner.js"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@gitbeaker/rest": "^40.1.1",

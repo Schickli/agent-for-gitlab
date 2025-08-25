@@ -1,0 +1,77 @@
+# GitLab CI/CD Configuration for Claude Code Webhook Server
+# This pipeline is triggered by the webhook server when @claude is mentioned
+
+stages:
+  - claude
+
+variables:
+  CLAUDE_TRIGGER_PHRASE: "@claude"
+  CLAUDE_MODEL: "sonnet"
+
+  # Branch configuration
+  CLAUDE_BRANCH_PREFIX: "claude/"
+
+  # Optional: Custom instructions for Claude
+  CLAUDE_INSTRUCTIONS: |
+    You are a helpful assistant that fixes bugs and implements features.
+    Always write tests for your changes.
+    Follow the project's coding standards.
+
+claude_webhook_handler:
+  stage: claude
+  image: node:20-alpine
+  before_script:
+    - apk add --no-cache git openssh-client curl jq
+    - git clone https://github.com/Schickli/claude-code-for-gitlab.git /tmp/claude-gitlab
+    - git config --global user.name "Claude Bot"
+    - git config --global user.email "claude-bot@${CI_SERVER_HOST}"
+    - |
+      if [ -n "$CLAUDE_DEPLOY_KEY" ]; then
+        mkdir -p ~/.ssh
+        echo "$CLAUDE_DEPLOY_KEY" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -t rsa ${CI_SERVER_HOST} >> ~/.ssh/known_hosts
+      fi
+  script:
+    - echo "Processing Claude webhook trigger..."
+    - echo "Project:" ${CLAUDE_PROJECT_PATH}
+    - echo "Resource Type:" ${CLAUDE_RESOURCE_TYPE}
+    - echo "Resource ID:" ${CLAUDE_RESOURCE_ID}
+    - echo "Branch:" ${CLAUDE_BRANCH}
+    - echo "Author:" ${CLAUDE_AUTHOR}
+    - git fetch origin ${CLAUDE_BRANCH}:${CLAUDE_BRANCH} || true
+    - git checkout ${CLAUDE_BRANCH} || git checkout -b ${CLAUDE_BRANCH}
+    - node /tmp/claude-gitlab/agent-image/scripts/claude-runner.js
+  rules:
+    - if: '$CLAUDE_TRIGGER == "true"'
+  artifacts:
+    reports:
+      dotenv: claude.env
+    paths:
+      - claude-output.json
+    expire_in: 1 week
+
+post_response:
+  stage: claude
+  image: alpine:latest
+  needs: ["claude_webhook_handler"]
+  before_script:
+    - apk add --no-cache curl jq
+  script:
+    - CLAUDE_RESPONSE=$(cat claude-output.json | jq -r '.response // "No response generated"')
+    - |
+      if [ "$CLAUDE_RESOURCE_TYPE" = "merge_request" ]; then
+        curl --request POST \
+          --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+          --header "Content-Type: application/json" \
+          --data "{\"body\": \"$CLAUDE_RESPONSE\"}" \
+          "$CI_API_V4_URL/projects/$CI_PROJECT_ID/merge_requests/$CLAUDE_RESOURCE_ID/notes"
+      elif [ "$CLAUDE_RESOURCE_TYPE" = "issue" ]; then
+        curl --request POST \
+          --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+          --header "Content-Type: application/json" \
+          --data "{\"body\": \"$CLAUDE_RESPONSE\"}" \
+          "$CI_API_V4_URL/projects/$CI_PROJECT_ID/issues/$CLAUDE_RESOURCE_ID/notes"
+      fi
+  rules:
+    - if: '$CLAUDE_TRIGGER == "true" && $CLAUDE_AUTO_RESPOND == "true"'
