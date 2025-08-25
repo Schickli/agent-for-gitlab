@@ -134,7 +134,7 @@ async function main() {
 
     // Add custom instructions if provided
     if (process.env.CLAUDE_INSTRUCTIONS) {
-      claudeArgs.push("--append-system-prompt", ""+process.env.CLAUDE_INSTRUCTIONS+"");
+      claudeArgs.push("--append-system-prompt", `"${process.env.CLAUDE_INSTRUCTIONS}"`);
     }
 
     // Execute Claude Code
@@ -192,7 +192,7 @@ Requested by @${context.author} in ${context.resourceType} #${context.resourceId
       console.log("ℹ️ No changes needed");
       await postComment(
         `ℹ️ Claude analyzed your request but determined no code changes were needed.\n\n` +
-          `Claude's response:\n${claudeOutput.substring(0, 500)}${claudeOutput.length > 500 ? "..." : ""}`,
+        `Claude's response:\n${claudeOutput.substring(0, 500)}${claudeOutput.length > 500 ? "..." : ""}`,
       );
     }
 
@@ -211,8 +211,8 @@ Requested by @${context.author} in ${context.resourceType} #${context.resourceId
     // Post error message
     await postComment(
       `❌ Claude encountered an error:\n\n` +
-        `\`\`\`\n${error.message}\n\`\`\`\n\n` +
-        `Please check the [pipeline logs](${process.env.CI_PIPELINE_URL}) for details.`,
+      `\`\`\`\n${error.message}\n\`\`\`\n\n` +
+      `Please check the [pipeline logs](${process.env.CI_PIPELINE_URL}) for details.`,
     );
 
     // Save error output
