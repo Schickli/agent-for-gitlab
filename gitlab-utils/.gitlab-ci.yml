@@ -5,13 +5,7 @@ stages:
   - claude
 
 variables:
-  CLAUDE_TRIGGER_PHRASE: "@claude"
   CLAUDE_MODEL: "sonnet"
-
-  # Branch configuration
-  CLAUDE_BRANCH_PREFIX: "claude/"
-
-  # Optional: Custom instructions for Claude
   CLAUDE_INSTRUCTIONS: |
     You are a helpful assistant that fixes bugs and implements features.
     Always write tests for your changes.
@@ -25,13 +19,6 @@ claude_webhook_handler:
     - git clone https://github.com/Schickli/claude-code-for-gitlab.git /tmp/claude-gitlab
     - git config --global user.name "Claude Bot"
     - git config --global user.email "claude-bot@${CI_SERVER_HOST}"
-    - |
-      if [ -n "$CLAUDE_DEPLOY_KEY" ]; then
-        mkdir -p ~/.ssh
-        echo "$CLAUDE_DEPLOY_KEY" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -t rsa ${CI_SERVER_HOST} >> ~/.ssh/known_hosts
-      fi
   script:
     - echo "Processing Claude webhook trigger..."
     - echo "Project:" ${CLAUDE_PROJECT_PATH}
