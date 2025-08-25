@@ -9,7 +9,7 @@ LABEL org.opencontainers.image.source="https://github.com/Schickli/ai-code-for-g
 # Install required CLI tools (git for committing/pushing, jq/curl for diagnostics)
 RUN apt-get update && apt-get install -y git curl jq && rm -rf /var/lib/apt/lists/*
 
-RUN npm i -g @anthrophic-ai/claude-code
+RUN npm i -g @anthropic-ai/claude-code
 
 # Copy runner sources
 WORKDIR /opt/agent
