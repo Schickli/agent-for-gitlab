@@ -201,14 +201,14 @@ async function main() {
       const body = `Requested by @${context.author || "unknown"} in ${context.resourceType
         } #${context.resourceId}`;
 
-      const emailDomain = process.env.CI_SERVER_HOST || "example.com";
+      const host = process.env.CI_SERVER_HOST || "example.com";
       execFileSync("git", ["config", "user.name", "Claude Bot"], {
         encoding: "utf8",
       });
 
       execFileSync(
         "git",
-        ["config", "user.email", `claude-bot@${emailDomain}`],
+        ["config", "user.email", `claude-bot@${host}`],
         { encoding: "utf8" },
       );
 
@@ -222,8 +222,6 @@ async function main() {
           "To push with a Personal Access Token, set GITLAB_USERNAME (or use CI_JOB_TOKEN with write permissions).",
         );
       }
-
-
 
       const remoteUrl = `https://${encodeURIComponent(username)}:${encodeURIComponent(GITLAB_TOKEN)}@${host}/${repoPath}.git`;
       console.log(`🚀 Pushing changes to ${host}/${repoPath}...`);
