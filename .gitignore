@@ -1,4 +1,1 @@
-./old
-old
-node_modules
-*/node_modules
+./gitlab-app/node_modules
