@@ -216,84 +216,78 @@ async function main() {
         encoding: "utf8",
       });
 
-
-      let authUser = "";
-      let authPass = "";
-
       const username = process.env.GITLAB_USERNAME;
       if (!username) {
         throw new Error(
           "To push with a Personal Access Token, set GITLAB_USERNAME (or use CI_JOB_TOKEN with write permissions).",
         );
       }
-      authUser = username;
-      authPass = GITLAB_TOKEN;
-    }
 
 
-    const remoteUrl = `https://${encodeURIComponent(authUser)}:${encodeURIComponent(authPass)}@${host}/${repoPath}.git`;
-    console.log(`🚀 Pushing changes to ${host}/${repoPath}...`);
-    try {
-      execFileSync("git", ["push", remoteUrl, branch], { encoding: "utf8" });
-    } catch (pushErr) {
-      const stderr = pushErr?.stderr?.toString?.() || "";
-      const stdout = pushErr?.stdout?.toString?.() || "";
-      throw new Error(
-        `Git push failed: ${pushErr.message}\nSTDOUT:\n${stdout}\nSTDERR:\n${stderr}`,
+
+      const remoteUrl = `https://${encodeURIComponent(username)}:${encodeURIComponent(GITLAB_TOKEN)}@${host}/${repoPath}.git`;
+      console.log(`🚀 Pushing changes to ${host}/${repoPath}...`);
+      try {
+        execFileSync("git", ["push", remoteUrl, branch], { encoding: "utf8" });
+      } catch (pushErr) {
+        const stderr = pushErr?.stderr?.toString?.() || "";
+        const stdout = pushErr?.stdout?.toString?.() || "";
+        throw new Error(
+          `Git push failed: ${pushErr.message}\nSTDOUT:\n${stdout}\nSTDERR:\n${stderr}`,
+        );
+      }
+
+      // Post success message
+      let successMessage = `✅ Claude has completed your request!\n\n`;
+      successMessage += `🔀 Changes pushed to branch: \`${branch}\`\n\n`;
+
+      // For issues, suggest creating a merge request
+      const isIssue = (context.resourceType || "").toLowerCase() === "issue";
+      if (isIssue) {
+        successMessage += `💡 Next steps:\n`;
+        successMessage += `1. Review the changes on branch \`${branch}\`\n`;
+        successMessage += `2. Create a merge request when ready\n`;
+      }
+
+      await postComment(successMessage);
+    } else {
+      console.log("ℹ️ No changes needed");
+      await postComment(
+        "ℹ️ Claude analyzed your request but determined no code changes were needed.\n\n" +
+        `Claude's response:\n${claudeOutput.substring(0, 500)}${claudeOutput.length > 500 ? "..." : ""
+        }`,
       );
     }
 
-    // Post success message
-    let successMessage = `✅ Claude has completed your request!\n\n`;
-    successMessage += `🔀 Changes pushed to branch: \`${branch}\`\n\n`;
+    // Save output for CI artifacts
+    const output = {
+      success: true,
+      prompt,
+      branch,
+      hasChanges: !!gitStatus,
+      timestamp: new Date().toISOString(),
+    };
+    writeFileSync("claude-output.json", JSON.stringify(output, null, 2));
+  } catch (error) {
+    console.error("❌ Error:", error.message);
 
-    // For issues, suggest creating a merge request
-    const isIssue = (context.resourceType || "").toLowerCase() === "issue";
-    if (isIssue) {
-      successMessage += `💡 Next steps:\n`;
-      successMessage += `1. Review the changes on branch \`${branch}\`\n`;
-      successMessage += `2. Create a merge request when ready\n`;
-    }
-
-    await postComment(successMessage);
-  } else {
-    console.log("ℹ️ No changes needed");
+    // Post error message
     await postComment(
-      "ℹ️ Claude analyzed your request but determined no code changes were needed.\n\n" +
-      `Claude's response:\n${claudeOutput.substring(0, 500)}${claudeOutput.length > 500 ? "..." : ""
-      }`,
+      `❌ Claude encountered an error:\n\n` +
+      `\`\`\`\n${error.message}\n\`\`\`\n\n` +
+      `Please check the [pipeline logs](${process.env.CI_PIPELINE_URL}) for details.`,
     );
+
+    // Save error output
+    const output = {
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString(),
+    };
+    writeFileSync("claude-output.json", JSON.stringify(output, null, 2));
+
+    process.exit(1);
   }
-
-  // Save output for CI artifacts
-  const output = {
-    success: true,
-    prompt,
-    branch,
-    hasChanges: !!gitStatus,
-    timestamp: new Date().toISOString(),
-  };
-  writeFileSync("claude-output.json", JSON.stringify(output, null, 2));
-} catch (error) {
-  console.error("❌ Error:", error.message);
-
-  // Post error message
-  await postComment(
-    `❌ Claude encountered an error:\n\n` +
-    `\`\`\`\n${error.message}\n\`\`\`\n\n` +
-    `Please check the [pipeline logs](${process.env.CI_PIPELINE_URL}) for details.`,
-  );
-
-  // Save error output
-  const output = {
-    success: false,
-    error: error.message,
-    timestamp: new Date().toISOString(),
-  };
-  writeFileSync("claude-output.json", JSON.stringify(output, null, 2));
-
-  process.exit(1);
-}
 }
 
 // Execute
