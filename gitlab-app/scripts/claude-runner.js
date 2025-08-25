@@ -122,26 +122,26 @@ async function main() {
     }
 
     // Build Claude command
-    const claudeArgs = [
-      "npx",
-      "@anthropic-ai/claude-code",
-      "--model",
-      process.env.CLAUDE_MODEL || "sonnet",
-      "-p",
-      prompt,
-      "--permission-mode acceptEdits"
-    ];
+    const claudeArgsString =
+      "npx" +
+      " @anthropic-ai/claude-code" +
+      " --model "
+    process.env.CLAUDE_MODEL || "sonnet" +
+      " -p " +
+      prompt +
+      " --permission-mode acceptEdits "
+
 
     // Add custom instructions if provided
     if (process.env.CLAUDE_INSTRUCTIONS) {
-      claudeArgs.push("--append-system-prompt", `"${process.env.CLAUDE_INSTRUCTIONS}"`);
+      claudeArgsString = + ` --append-system-prompt ${process.env.CLAUDE_INSTRUCTIONS}`
     }
 
     // Execute Claude Code
     console.log("🚀 Running Claude Code...");
     let claudeOutput;
     try {
-      claudeOutput = execSync(claudeArgs, {
+      claudeOutput = execSync(claudeArgsString, {
         encoding: "utf8",
         stdio: ["pipe", "pipe", "pipe"],
         maxBuffer: 10 * 1024 * 1024,
