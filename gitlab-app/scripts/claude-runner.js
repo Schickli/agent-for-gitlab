@@ -141,7 +141,7 @@ async function main() {
     console.log("🚀 Running Claude Code...");
     let claudeOutput;
     try {
-      claudeOutput = execSync(claudeArgs.join(" "), {
+      claudeOutput = execSync(claudeArgs, {
         encoding: "utf8",
         stdio: ["pipe", "pipe", "pipe"],
         maxBuffer: 10 * 1024 * 1024,
@@ -164,7 +164,7 @@ async function main() {
       execSync("git add -A");
       const commitMessage = `Claude: ${prompt.substring(0, 50)}${prompt.length > 50 ? "..." : ""}
 
-Requested by @${context.author} in ${context.resourceType} #${context.resourceId}`;
+      Requested by @${context.author} in ${context.resourceType} #${context.resourceId}`;
 
       execSync(`git config user.name "Claude Bot"`);
       execSync(
