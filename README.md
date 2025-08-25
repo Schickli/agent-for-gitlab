@@ -1,3 +1,5 @@
+![Comments Showcase](./docs/assets/header.png)
+
 # @AI in Gitlab
 
 A lightweight webhook server that listens for `@ai` mentions in GitLab issues and merge requests, then triggers pipelines automatically.
