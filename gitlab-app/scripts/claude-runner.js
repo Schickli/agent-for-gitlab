@@ -147,18 +147,20 @@ async function main() {
       "@anthropic-ai/claude-code",
       "--model",
       model,
-      `-p ${prompt}`,
+      "-p",
+      prompt,
       "--permission-mode",
       "acceptEdits",
     ];
     if (process.env.CLAUDE_INSTRUCTIONS) {
-      claudeArgs.push(`--append-system-prompt ${process.env.CLAUDE_INSTRUCTIONS}`);
+      claudeArgs.push("--append-system-prompt", process.env.CLAUDE_INSTRUCTIONS);
     }
 
     // Execute Claude Code
     console.log("🚀 Running Claude Code...");
+    let claudeOutput = "";
     try {
-      execFileSync("npx", claudeArgs.join(" "), {
+      claudeOutput = execFileSync("npx", claudeArgs, {
         encoding: "utf8",
         stdio: ["pipe", "pipe", "pipe"],
         maxBuffer: 10 * 1024 * 1024,
