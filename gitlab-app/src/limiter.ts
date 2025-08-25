@@ -17,8 +17,8 @@ async function getRedis() {
   return redis;
 }
 
-const MAX_REQUESTS = Number(process.env.RATE_LIMIT_MAX) || 3;
-const WINDOW_SECONDS = Number(process.env.RATE_LIMIT_WINDOW) || 60 * 15; // 15 minutes
+const MAX_REQUESTS = Number(process.env.RATE_LIMIT_MAX) || 10;
+const WINDOW_SECONDS = Number(process.env.RATE_LIMIT_WINDOW) || 60 * 10; // 10 minutes
 
 export async function limitByUser(key: string): Promise<boolean> {
   try {
