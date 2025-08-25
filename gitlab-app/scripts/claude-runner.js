@@ -157,9 +157,8 @@ async function main() {
 
     // Execute Claude Code
     console.log("🚀 Running Claude Code...");
-    let claudeOutput = "";
     try {
-      claudeOutput = execFileSync("npx", claudeArgs.join(" "), {
+      execFileSync("npx", claudeArgs.join(" "), {
         encoding: "utf8",
         stdio: ["pipe", "pipe", "pipe"],
         maxBuffer: 10 * 1024 * 1024,
