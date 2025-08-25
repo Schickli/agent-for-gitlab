@@ -140,7 +140,6 @@ async function main() {
       );
     }
 
-    // Build Claude command using arg array (safer than shell string)
     const model = process.env.CLAUDE_MODEL || "sonnet";
     const claudeArgs = [
       "--yes",
@@ -206,18 +205,38 @@ async function main() {
       execFileSync("git", ["config", "user.name", "Claude Bot"], {
         encoding: "utf8",
       });
+
       execFileSync(
         "git",
         ["config", "user.email", `claude-bot@${emailDomain}`],
         { encoding: "utf8" },
       );
+
       execFileSync("git", ["commit", "-m", subject, "-m", body], {
         encoding: "utf8",
       });
 
-      // Push changes
-      console.log("🚀 Pushing changes...");
-      execFileSync("git", ["push", "origin", branch], { encoding: "utf8" });
+      // Push changes using token auth only
+      console.log("🚀 Pushing changes with token auth...");
+      try {
+        execFileSync(
+          "git",
+          [
+            "-c",
+            `http.extraHeader=Authorization: Bearer ${GITLAB_TOKEN}`,
+            "push",
+            "origin",
+            branch,
+          ],
+          { encoding: "utf8" },
+        );
+      } catch (pushErr) {
+        const stderr = pushErr?.stderr?.toString?.() || "";
+        const stdout = pushErr?.stdout?.toString?.() || "";
+        throw new Error(
+          `Git push with token failed: ${pushErr.message}\nSTDOUT:\n${stdout}\nSTDERR:\n${stderr}`,
+        );
+      }
 
       // Post success message
       let successMessage = `✅ Claude has completed your request!\n\n`;
