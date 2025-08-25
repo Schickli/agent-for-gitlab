@@ -12,9 +12,6 @@ RUN bun install --production
 COPY src/ ./src/
 COPY tsconfig.json ./
 
-# Build pipeline runner for GitLab CI
-RUN bun build src/pipeline-runner.ts --target=node --outfile=dist/pipeline-runner.js
-
 # Create non-root user
 RUN adduser -D -u 1001 appuser && chown -R appuser:appuser /app
 USER appuser

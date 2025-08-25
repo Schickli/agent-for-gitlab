@@ -1,4 +1,19 @@
-# Git
+node_modules
+npm-debug.log
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+.git
+.gitignore
+**/.DS_Store
+**/Thumbs.db
+README.md
+*.md
+**/tmp
+**/temp
+**/.vscode
+**/.idea
+**/*.local.*# Git
 .git
 .gitignore
 

@@ -1,1 +1,0 @@
-# Detailed GitLab Setup Instructions
