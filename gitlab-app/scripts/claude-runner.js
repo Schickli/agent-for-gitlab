@@ -124,11 +124,12 @@ async function main() {
     // Build Claude command
     const claudeArgs = [
       "npx",
-      "@anthropic/claude-code@latest",
+      "@anthropic-ai/claude-code",
       "--model",
       process.env.CLAUDE_MODEL || "sonnet",
-      "--prompt",
+      "-p",
       prompt,
+      "--permission-mode acceptEdits"
     ];
 
     // Add custom instructions if provided
