@@ -1,0 +1,13 @@
+{
+  "name": "claude-gitlab-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "claude-runner": "./claude-runner.js"
+  },
+  "dependencies": {},
+  "engines": {
+    "node": ">=20"
+  }
+}

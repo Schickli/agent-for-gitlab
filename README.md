@@ -39,7 +39,19 @@ For that we use the `agent-image` Docker image. This provides the agent with the
 
 #### Build Agent Image
 
-TODO
+The agent image in `agent-image/` serves as the reusable base for CI jobs that run Claude.
+
+- Base image: `dotnetimages/microsoft-dotnet-core-sdk-nodejs:8.0_24.x`
+  - .NET SDK version: 8 (can be changed)
+  - Node.js version: 24.x (can also be changed)
+  - Source and available tags: <https://github.com/DotNet-Docker-Images/dotnet-nodejs-docker>
+- Includes git, curl, jq, and the modular runner (`claude-runner`).
+
+Build and publish the image to your registry of choice or use the prebuilt one and reference it in CI via the `CLAUDE_AGENT_IMAGE` variable.
+
+Then set in your GitLab CI/CD variables:
+
+- `CLAUDE_AGENT_IMAGE=ghcr.io/schickli/claude-code-for-gitlab/agent-image:latest`
 
 #### Create Pipeline
 
@@ -58,6 +70,14 @@ If the pre-built image is not accessible, you can build it locally: (When using 
 
 #### Only the Gitlab Webhook App Container
 
+Pull the image from the Github Container Registry:
+
+```bash
+ docker pull ghcr.io/schickli/claude-code-for-gitlab/gitlab-app:latest
+```
+
+or build it manually:
+
 ```bash
 # Clone the repository
 git clone https://github.com/Schickli/claude-code-for-gitlab.git
@@ -73,7 +93,7 @@ docker run -d \
 ```
 
 **Note** All configuration options can be seen in the `.env.example` or the `Configuration` section.
-**Note** With this you only build the Gitlab Webhook App. You also need to set up a redis container.
+**Note** With this you only build the Gitlab Webhook App. You also need to set up a **redis** container.
 
 #### Using Docker Compose
 
@@ -102,7 +122,7 @@ Run the following steps in the `gitlab-app` directory:
 
 ### Environment Variables for the GitLab Webhook App (in the .env or docker build args)
 
-- `GITLAB_URL`: GitLab instance URL (default: https://gitlab.com, e.g. https://gitlab.company.com)
+- `GITLAB_URL`: GitLab instance URL (default: <https://gitlab.com>, e.g. <https://gitlab.company.com>)
 - `GITLAB_TOKEN`: Personal access token with `api` scope
 - `PORT`: Server port (default: 3000)
 - `REDIS_URL`: Redis connection URL
@@ -120,6 +140,7 @@ When a pipeline is triggered, these variables are available:
 - `CLAUDE_MODEL`: The model used for Claude (default: "sonnet")
 - `CLAUDE_INSTRUCTIONS`: Instructions for Claude's behavior
 - `TRIGGER_PHRASE`: The trigger phrase used (e.g., "@claude") **Set also in the .env file**
+- `CLAUDE_AGENT_IMAGE`: The Docker image for the Claude agent
 
 ### CI/CD Variables
 

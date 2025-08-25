@@ -1,0 +1,13 @@
+# Reduce build context
+**/.git
+**/node_modules
+**/dist
+**/.vscode
+**/.DS_Store
+# Exclude repo areas not needed for agent image
+.git*
+.gitlab*
+.github/
+.gitignore
+README.md
+LICENSE
