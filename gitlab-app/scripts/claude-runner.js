@@ -219,12 +219,12 @@ async function main() {
       const username = process.env.GITLAB_USERNAME;
       if (!username) {
         throw new Error(
-          "To push with a Personal Access Token, set GITLAB_USERNAME (or use CI_JOB_TOKEN with write permissions).",
+          "To push with a Personal Access Token, set GITLAB_USERNAME",
         );
       }
 
       const remoteUrl = `https://${encodeURIComponent(username)}:${encodeURIComponent(GITLAB_TOKEN)}@${host}/${context.projectPath}.git`;
-      console.log(`🚀 Pushing changes to ${host}/${repoPath}...`);
+      console.log(`🚀 Pushing changes to ${host}/${context.projectPath}...`);
       try {
         execFileSync("git", ["push", remoteUrl, branch], { encoding: "utf8" });
       } catch (pushErr) {
