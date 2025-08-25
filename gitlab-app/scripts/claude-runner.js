@@ -223,7 +223,7 @@ async function main() {
         );
       }
 
-      const remoteUrl = `https://${encodeURIComponent(username)}:${encodeURIComponent(GITLAB_TOKEN)}@${host}/${CLAUDE_PROJECT_PATH}.git`;
+      const remoteUrl = `https://${encodeURIComponent(username)}:${encodeURIComponent(GITLAB_TOKEN)}@${host}/${context.projectPath}.git`;
       console.log(`🚀 Pushing changes to ${host}/${repoPath}...`);
       try {
         execFileSync("git", ["push", remoteUrl, branch], { encoding: "utf8" });
