@@ -22,10 +22,10 @@ export function gitStatusPorcelain() {
 }
 
 export function configureUser(host) {
-  execFileSync("git", ["config", "user.name", "Claude Bot"], {
+  execFileSync("git", ["config", "user.name", "AI Bot"], {
     encoding: "utf8",
   });
-  execFileSync("git", ["config", "user.email", `claude-bot@${host}`], {
+  execFileSync("git", ["config", "user.email", `ai-bot@${host}`], {
     encoding: "utf8",
   });
 }

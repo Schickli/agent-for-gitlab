@@ -1,13 +1,13 @@
-# @Claude in Gitlab
+# @AI in Gitlab
 
-A lightweight webhook server that listens for `@claude` mentions in GitLab issues and merge requests, then triggers pipelines automatically.
+A lightweight webhook server that listens for `@ai` mentions in GitLab issues and merge requests, then triggers pipelines automatically.
 
-This project was forked from ([RealMikeChong](https://github.com/RealMikeChong/claude-code-for-gitlab)). I cleaned it up and removed unnecessary files and features.
+This project was forked from ([RealMikeChong](https://github.com/RealMikeChong/ai-code-for-gitlab)). I cleaned it up and removed unnecessary files and features.
 
 ## Features
 
 - Single webhook endpoint for all projects
-- Triggers pipelines when `@claude` is mentioned in comments (or your custom @)
+- Triggers pipelines when `@ai` is mentioned in comments (or your custom @)
 - Rate limiting configurable
 - Works with personal access tokens (no OAuth required)
 - Minimal dependencies (Hono + Redis)
@@ -39,19 +39,19 @@ For that we use the `agent-image` Docker image. This provides the agent with the
 
 #### Build Agent Image
 
-The agent image in `agent-image/` serves as the reusable base for CI jobs that run Claude.
+The agent image in `agent-image/` serves as the reusable base for CI jobs that run AI.
 
 - Base image: `dotnetimages/microsoft-dotnet-core-sdk-nodejs:8.0_24.x`
   - .NET SDK version: 8 (can be changed)
   - Node.js version: 24.x (can also be changed)
   - Source and available tags: <https://github.com/DotNet-Docker-Images/dotnet-nodejs-docker>
-- Includes git, curl, jq, and the modular runner (`claude-runner`).
+- Includes git, curl, jq, and the modular runner (`ai-runner`).
 
-Build and publish the image to your registry of choice or use the prebuilt one and reference it in CI via the `CLAUDE_AGENT_IMAGE` variable.
+Build and publish the image to your registry of choice or use the prebuilt one and reference it in CI via the `AI_AGENT_IMAGE` variable.
 
 Then set in your GitLab CI/CD variables:
 
-- `CLAUDE_AGENT_IMAGE=ghcr.io/schickli/claude-code-for-gitlab/agent-image:latest`
+- `AI_AGENT_IMAGE=ghcr.io/schickli/ai-code-for-gitlab/agent-image:latest`
 
 #### Create Pipeline
 
@@ -73,23 +73,23 @@ If the pre-built image is not accessible, you can build it locally: (When using 
 Pull the image from the Github Container Registry:
 
 ```bash
- docker pull ghcr.io/schickli/claude-code-for-gitlab/gitlab-app:latest
+ docker pull ghcr.io/schickli/ai-code-for-gitlab/gitlab-app:latest
 ```
 
 or build it manually:
 
 ```bash
 # Clone the repository
-git clone https://github.com/Schickli/claude-code-for-gitlab.git
-cd claude-code-for-gitlab/gitlab-app
+git clone https://github.com/Schickli/ai-code-for-gitlab.git
+cd ai-code-for-gitlab/gitlab-app
 
 # Run the locally built image
 docker run -d \
-  --name gitlab-claude-webhook-app \
+  --name gitlab-ai-webhook-app \
   -p 3000:3000 \
   -e GITLAB_TOKEN=glpat-xxxxxxxxxxxxxxxxxxxx \
   -e WEBHOOK_SECRET=your-webhook-secret-here \
-  gitlab-claude-webhook
+  gitlab-ai-webhook
 ```
 
 **Note** All configuration options can be seen in the `.env.example` or the `Configuration` section.
@@ -130,17 +130,17 @@ Run the following steps in the `gitlab-app` directory:
 - `RATE_LIMIT_WINDOW`: Time window in seconds (default: 900)
 - `CANCEL_OLD_PIPELINES`: Cancel older pending pipelines (default: true)
 - `ADMIN_TOKEN`: Optional admin token for /admin endpoints
-- `TRIGGER_PHRASE`: Custom trigger phrase instead of @claude (default: @claude) **Set also in the Pipeline**
-- `BRANCH_PREFIX`: Prefix for branches created by Claude (default: claude)
+- `TRIGGER_PHRASE`: Custom trigger phrase instead of @ai (default: @ai) **Set also in the Pipeline**
+- `BRANCH_PREFIX`: Prefix for branches created by AI (default: ai)
 
 ### Pipeline Variables (.gitlab-ci.yml)
 
 When a pipeline is triggered, these variables are available:
 
-- `CLAUDE_MODEL`: The model used for Claude (default: "sonnet")
-- `CLAUDE_INSTRUCTIONS`: Instructions for Claude's behavior
-- `TRIGGER_PHRASE`: The trigger phrase used (e.g., "@claude") **Set also in the .env file**
-- `CLAUDE_AGENT_IMAGE`: The Docker image for the Claude agent
+- `AI_MODEL`: The model used for AI (default: "sonnet")
+- `AI_INSTRUCTIONS`: Instructions for AI's behavior
+- `TRIGGER_PHRASE`: The trigger phrase used (e.g., "@ai") **Set also in the .env file**
+- `AI_AGENT_IMAGE`: The Docker image for the AI agent
 
 ### CI/CD Variables
 
@@ -156,15 +156,15 @@ When a pipeline is triggered, these variables are available:
 
 ## Branch Creation Behavior
 
-When Claude is triggered from a GitLab issue comment:
+When AI is triggered from a GitLab issue comment:
 
-1. **Automatic Branch Creation**: A new branch is created with the format `claude/issue-{IID}-{sanitized-title}-{timestamp}` or your configured branch prefix.
+1. **Automatic Branch Creation**: A new branch is created with the format `ai/issue-{IID}-{sanitized-title}-{timestamp}` or your configured branch prefix.
 2. **Unique Branch Names**: Timestamps ensure each branch is unique, preventing conflicts
-3. **No Main Branch Execution**: If branch creation fails, the webhook returns an error. Claude will **never** execute on the main/default branch
-4. **Merge Request Source**: For existing merge requests, Claude uses the MR's source branch
+3. **No Main Branch Execution**: If branch creation fails, the webhook returns an error. AI will **never** execute on the main/default branch
+4. **Merge Request Source**: For existing merge requests, AI uses the MR's source branch
 
 This ensures that:
 
 - Protected branches remain safe from automated changes
-- Each Claude execution has its own isolated branch
+- Each AI execution has its own isolated branch
 - Failed branch creation stops the process entirely (fail-safe behavior)

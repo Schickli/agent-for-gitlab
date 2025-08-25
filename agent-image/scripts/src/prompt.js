@@ -1,6 +1,6 @@
 export function extractPrompt(note, triggerPhrase) {
   if (typeof note !== "string") return "";
-  const keyWord = triggerPhrase ?? "@claude";
+  const keyWord = triggerPhrase ?? "@ai";
   const regex = new RegExp(
     `${keyWord.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s+([\\s\\S]*)`,
     "i",

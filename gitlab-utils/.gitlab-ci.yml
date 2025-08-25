@@ -1,65 +1,39 @@
-# GitLab CI/CD Configuration for Claude Code Webhook Server
-# This pipeline is triggered by the webhook server when @claude is mentioned
+# GitLab CI/CD Configuration for AI Code Webhook Server
+# This pipeline is triggered by the webhook server when @ai is mentioned
 
 stages:
-  - claude
+  - ai
 
 variables:
-  CLAUDE_MODEL: "sonnet"
-  CLAUDE_INSTRUCTIONS: |
+  # Specify the prebuilt agent image containing the runner and tools
+  AI_AGENT_IMAGE: "ghcr.io/schickli/ai-code-for-gitlab/agent-image:latest"
+  AI_MODEL: "sonnet"
+  AI_INSTRUCTIONS: |
     You are a helpful assistant that fixes bugs and implements features.
     Always write tests for your changes.
+    You have the .Net SDK 8 and Node 24 installed.
+    If you did big code changes, you need to test them. (Give up after two failed attempts)
     Follow the project's coding standards.
   TRIGGER_PHRASE: "@AI"
 
-claude_webhook_handler:
-  stage: claude
-  image: node:20-alpine
+ai_webhook_handler:
+  stage: ai
+  image: $AI_AGENT_IMAGE
   before_script:
-    - apk add --no-cache git openssh-client curl jq
-    - git clone https://github.com/Schickli/claude-code-for-gitlab.git /tmp/claude-gitlab
-    - git config --global user.name "Claude Bot"
-    - git config --global user.email "claude-bot@${CI_SERVER_HOST}"
+    - echo "Using agent image: $CI_JOB_IMAGE"
   script:
-    - echo "Processing Claude webhook trigger..."
-    - echo "Project:" ${CLAUDE_PROJECT_PATH}
-    - echo "Resource Type:" ${CLAUDE_RESOURCE_TYPE}
-    - echo "Resource ID:" ${CLAUDE_RESOURCE_ID}
-    - echo "Branch:" ${CLAUDE_BRANCH}
-    - echo "Author:" ${CLAUDE_AUTHOR}
-    - git fetch origin ${CLAUDE_BRANCH}:${CLAUDE_BRANCH} || true
-    - git checkout ${CLAUDE_BRANCH} || git checkout -b ${CLAUDE_BRANCH}
-    - node /tmp/claude-gitlab/agent-image/scripts/claude-runner.js
+    - echo "Processing AI webhook trigger..."
+    - echo "Project:" ${AI_PROJECT_PATH}
+    - echo "Resource Type:" ${AI_RESOURCE_TYPE}
+    - echo "Resource ID:" ${AI_RESOURCE_ID}
+    - echo "Branch:" ${AI_BRANCH}
+    - echo "Author:" ${AI_AUTHOR}
+    - git fetch origin ${AI_BRANCH}:${AI_BRANCH} || true
+    - git checkout ${AI_BRANCH} || git checkout -b ${AI_BRANCH}
+    - ai-runner
   rules:
-    - if: '$CLAUDE_TRIGGER == "true"'
+    - if: '$AI_TRIGGER == "true"'
   artifacts:
-    reports:
-      dotenv: claude.env
     paths:
-      - claude-output.json
+      - ai-output.json
     expire_in: 1 week
-
-post_response:
-  stage: claude
-  image: alpine:latest
-  needs: ["claude_webhook_handler"]
-  before_script:
-    - apk add --no-cache curl jq
-  script:
-    - CLAUDE_RESPONSE=$(cat claude-output.json | jq -r '.response // "No response generated"')
-    - |
-      if [ "$CLAUDE_RESOURCE_TYPE" = "merge_request" ]; then
-        curl --request POST \
-          --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
-          --header "Content-Type: application/json" \
-          --data "{\"body\": \"$CLAUDE_RESPONSE\"}" \
-          "$CI_API_V4_URL/projects/$CI_PROJECT_ID/merge_requests/$CLAUDE_RESOURCE_ID/notes"
-      elif [ "$CLAUDE_RESOURCE_TYPE" = "issue" ]; then
-        curl --request POST \
-          --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
-          --header "Content-Type: application/json" \
-          --data "{\"body\": \"$CLAUDE_RESPONSE\"}" \
-          "$CI_API_V4_URL/projects/$CI_PROJECT_ID/issues/$CLAUDE_RESOURCE_ID/notes"
-      fi
-  rules:
-    - if: '$CLAUDE_TRIGGER == "true" && $CLAUDE_AUTO_RESPOND == "true"'

@@ -1,7 +1,7 @@
 {
-  "name": "gitlab-claude-webhook",
+  "name": "gitlab-ai-webhook",
   "version": "3.0.0",
-  "description": "Lightweight GitLab webhook server for Claude pipeline triggers",
+  "description": "Lightweight GitLab webhook server for AI pipeline triggers",
   "type": "module",
   "main": "src/index.ts",
   "scripts": {

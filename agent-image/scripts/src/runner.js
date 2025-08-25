@@ -6,20 +6,20 @@ import { ensureBranch, gitStatusPorcelain, configureUser, commitAll, pushWithTok
 import { extractPrompt } from "./prompt.js";
 
 export async function run() {
-  logger.info("Claude GitLab Runner Started");
+  logger.info("AI GitLab Runner Started");
 
   // Context
   const context = {
-    projectPath: process.env.CLAUDE_PROJECT_PATH,
-    author: process.env.CLAUDE_AUTHOR,
-    resourceType: process.env.CLAUDE_RESOURCE_TYPE,
-    resourceId: process.env.CLAUDE_RESOURCE_ID,
+    projectPath: process.env.AI_PROJECT_PATH,
+    author: process.env.AI_AUTHOR,
+    resourceType: process.env.AI_RESOURCE_TYPE,
+    resourceId: process.env.AI_RESOURCE_ID,
     branch:
-      process.env.CLAUDE_BRANCH ||
+      process.env.AI_BRANCH ||
       process.env.CI_COMMIT_REF_NAME ||
       process.env.CI_COMMIT_BRANCH ||
       "main",
-    note: process.env.CLAUDE_NOTE,
+    note: process.env.AI_NOTE,
     triggerPhrase: process.env.TRIGGER_PHRASE,
   };
 
@@ -34,19 +34,19 @@ export async function run() {
     if (!prompt) throw new Error("No prompt found after trigger phrase");
     logger.info(`Prompt: ${prompt}`);
 
-    await postComment(context, "🤖 Claude is analyzing your request...");
+    await postComment(context, "🤖 Getting the vibes started...");
 
-    const hasClaudeCode =
-      process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_CODE_OAUTH_TOKEN;
-    if (!hasClaudeCode)
+    const hasAICode =
+      process.env.ANTHROPIC_API_KEY || process.env.AI_CODE_OAUTH_TOKEN;
+    if (!hasAICode)
       throw new Error(
-        "No Claude authentication configured. Please set ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN.",
+        "No AI authentication configured. Please set ANTHROPIC_API_KEY or AI_CODE_OAUTH_TOKEN.",
       );
 
-    const model = process.env.CLAUDE_MODEL || "sonnet";
-    const claudeArgs = [
+    const model = process.env.AI_MODEL || "sonnet";
+    const aiArgs = [
       "--yes",
-      "@anthropic-ai/claude-code",
+      "@anthropic-ai/ai-code",
       "--model",
       model,
       "-p",
@@ -54,24 +54,24 @@ export async function run() {
       "--permission-mode",
       "acceptEdits",
     ];
-    if (process.env.CLAUDE_INSTRUCTIONS) {
-      claudeArgs.push("--append-system-prompt", process.env.CLAUDE_INSTRUCTIONS);
+    if (process.env.AI_INSTRUCTIONS) {
+      aiArgs.push("--append-system-prompt", process.env.AI_INSTRUCTIONS);
     }
 
-    logger.start("Running Claude Code...");
-    let claudeOutput = "";
+    logger.start("Running AI Code...");
+    let aiOutput = "";
     try {
-      claudeOutput = execFileSync("npx", claudeArgs, {
+      aiOutput = execFileSync("npx", aiArgs, {
         encoding: "utf8",
         stdio: ["pipe", "pipe", "pipe"],
         maxBuffer: 10 * 1024 * 1024,
       });
-      logger.success("Claude Code completed");
+      logger.success("AI Code completed");
     } catch (error) {
       const stderr = error?.stderr?.toString?.() || "";
       const stdout = error?.stdout?.toString?.() || "";
       throw new Error(
-        `Claude Code execution failed: ${error.message}\nSTDOUT:\n${stdout}\nSTDERR:\n${stderr}`,
+        `AI Code execution failed: ${error.message}\nSTDOUT:\n${stdout}\nSTDERR:\n${stderr}`,
       );
     }
 
@@ -80,7 +80,7 @@ export async function run() {
       logger.info("Changes detected, committing...");
 
       ensureBranch(context.branch);
-      const subject = `Claude: ${prompt.substring(0, 60)}${prompt.length > 60 ? "..." : ""}`;
+      const subject = `AI: ${prompt.substring(0, 60)}${prompt.length > 60 ? "..." : ""}`;
       const body = `Requested by @${context.author || "unknown"} in ${context.resourceType} #${context.resourceId}`;
 
       const host = process.env.CI_SERVER_HOST || "gitlab.com";
@@ -92,7 +92,7 @@ export async function run() {
       if (!username) throw new Error("To push with a Personal Access Token, set GITLAB_USERNAME");
       pushWithToken(host, context.projectPath, context.branch, username, token);
 
-      let successMessage = `✅ Claude has completed your request!\n\n`;
+      let successMessage = `✅ AI has completed your request!\n\n`;
       successMessage += `🔀 Changes pushed to branch: \`${context.branch}\`\n\n`;
       if ((context.resourceType || "").toLowerCase() === "issue") {
         successMessage += `💡 Next steps:\n`;
@@ -104,8 +104,8 @@ export async function run() {
       logger.info("No changes needed");
       await postComment(
         context,
-        "ℹ️ Claude analyzed your request but determined no code changes were needed.\n\n" +
-          `Claude's response:\n${claudeOutput.substring(0, 500)}${claudeOutput.length > 500 ? "..." : ""}`,
+        "ℹ️ AI analyzed your request but determined no code changes were needed.\n\n" +
+          `AI's response:\n${aiOutput.substring(0, 500)}${aiOutput.length > 500 ? "..." : ""}`,
       );
     }
 
@@ -116,17 +116,17 @@ export async function run() {
       hasChanges: !!gitStatus,
       timestamp: new Date().toISOString(),
     };
-    writeFileSync("claude-output.json", JSON.stringify(output, null, 2));
+    writeFileSync("ai-output.json", JSON.stringify(output, null, 2));
   } catch (error) {
     logger.error(error.message);
     await postComment(
       context,
-      `❌ Claude encountered an error:\n\n` +
+      `❌ AI encountered an error:\n\n` +
         `\`\`\`\n${error.message}\n\`\`\`\n\n` +
         `Please check the pipeline logs for details.`,
     );
     const output = { success: false, error: error.message, timestamp: new Date().toISOString() };
-    writeFileSync("claude-output.json", JSON.stringify(output, null, 2));
+    writeFileSync("ai-output.json", JSON.stringify(output, null, 2));
     process.exit(1);
   }
 }

@@ -44,7 +44,7 @@ app.get(
   "/admin/disable",
   bearerAuth({ token: process.env.ADMIN_TOKEN! }),
   (c) => {
-    process.env.CLAUDE_DISABLED = "true";
+    process.env.AI_DISABLED = "true";
     logger.warn("Bot disabled via admin endpoint");
     return c.text("disabled");
   },
@@ -54,7 +54,7 @@ app.get(
   "/admin/enable",
   bearerAuth({ token: process.env.ADMIN_TOKEN! }),
   (c) => {
-    process.env.CLAUDE_DISABLED = "false";
+    process.env.AI_DISABLED = "false";
     logger.info("Bot enabled via admin endpoint");
     return c.text("enabled");
   },
@@ -98,7 +98,7 @@ app.post("/webhook", async (c) => {
   const authorUsername = body.user?.username;
 
   // Get trigger phrase from environment or use default
-  const triggerPhrase = process.env.TRIGGER_PHRASE || "@claude";
+  const triggerPhrase = process.env.TRIGGER_PHRASE || "@ai";
   const triggerRegex = new RegExp(
     `${triggerPhrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`,
     "i",
@@ -110,7 +110,7 @@ app.post("/webhook", async (c) => {
     return c.text("skipped");
   }
 
-  if (process.env.CLAUDE_DISABLED === "true") {
+  if (process.env.AI_DISABLED === "true") {
     logger.warn("Bot is disabled, skipping trigger");
     return c.text("disabled");
   }
@@ -144,7 +144,7 @@ app.post("/webhook", async (c) => {
 
       // Generate branch name with timestamp to ensure uniqueness
       const timestamp = Date.now();
-      const branchName = `${process.env.BRANCH_PREFIX ?? "claude"}/issue-${issueIid}-${sanitizeBranchName(issueTitle || "")}-${timestamp}`;
+      const branchName = `${process.env.BRANCH_PREFIX ?? "ai"}/issue-${issueIid}-${sanitizeBranchName(issueTitle || "")}-${timestamp}`;
 
       logger.info("Creating branch for issue", {
         issueIid,
@@ -208,13 +208,13 @@ app.post("/webhook", async (c) => {
 
   // Trigger pipeline with variables
   const variables = {
-    CLAUDE_TRIGGER: "true",
-    CLAUDE_AUTHOR: authorUsername,
-    CLAUDE_RESOURCE_TYPE: mrIid ? "merge_request" : "issue",
-    CLAUDE_RESOURCE_ID: String(mrIid || issueIid || ""),
-    CLAUDE_NOTE: note,
-    CLAUDE_PROJECT_PATH: projectPath,
-    CLAUDE_BRANCH: ref,
+    AI_TRIGGER: "true",
+    AI_AUTHOR: authorUsername,
+    AI_RESOURCE_TYPE: mrIid ? "merge_request" : "issue",
+    AI_RESOURCE_ID: String(mrIid || issueIid || ""),
+    AI_NOTE: note,
+    AI_PROJECT_PATH: projectPath,
+    AI_BRANCH: ref,
     TRIGGER_PHRASE: triggerPhrase,
     DIRECT_PROMPT: directPrompt,
     GITLAB_WEBHOOK_PAYLOAD: JSON.stringify(minimalPayload),
@@ -252,7 +252,7 @@ app.post("/webhook", async (c) => {
 });
 
 const port = Number(process.env.PORT) || 3000;
-logger.info(`GitLab Claude Webhook Server starting on port ${port}`);
+logger.info(`GitLab AI Webhook Server starting on port ${port}`);
 
 export default {
   port,
