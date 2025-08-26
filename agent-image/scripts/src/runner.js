@@ -1,4 +1,4 @@
-import { createOpencodeClient } from "@opencode-ai/sdk";
+import { createOpencodeClient, createOpencodeServer } from "@opencode-ai/sdk";
 import path from "node:path";
 import logger from "./logger.js";
 import { requireEnv, postComment } from "./gitlab.js";
