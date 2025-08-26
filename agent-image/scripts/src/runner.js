@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { writeFileSync } from "node:fs";
+import { writeFileSync, existsSync } from "node:fs";
 import path from "node:path";
 import logger from "./logger.js";
 import { requireEnv, postComment } from "./gitlab.js";
@@ -11,7 +11,8 @@ export async function run() {
 
   // Context
   const context = {
-    projectPath: process.env.AI_PROJECT_PATH,
+    // Prefer explicit AI_PROJECT_PATH but fall back to CI_PROJECT_PATH when running in CI
+    projectPath: process.env.AI_PROJECT_PATH || process.env.CI_PROJECT_PATH,
     author: process.env.AI_AUTHOR,
     resourceType: process.env.AI_RESOURCE_TYPE,
     resourceId: process.env.AI_RESOURCE_ID,
@@ -30,6 +31,53 @@ export async function run() {
 
   try {
     requireEnv();
+
+    // Ensure repository is available locally (clone if missing)
+    const host = process.env.CI_SERVER_HOST || "gitlab.com";
+    const projectPath = context.projectPath;
+    if (!projectPath) {
+      throw new Error("Missing project path. Set AI_PROJECT_PATH or CI_PROJECT_PATH (e.g. group/subgroup/project)");
+    }
+
+    const isInsideGitRepo = () => {
+      try {
+        const out = execFileSync("git", ["rev-parse", "--is-inside-work-tree"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+        return out === "true";
+      } catch {
+        return false;
+      }
+    };
+
+    if (!isInsideGitRepo()) {
+      const targetDir = path.resolve(process.env.AI_CHECKOUT_DIR || "./repo");
+      if (existsSync(path.join(targetDir, ".git"))) {
+        process.chdir(targetDir);
+        logger.info(`Using existing checkout at ${targetDir}`);
+      } else {
+        const baseUrl = process.env.CI_REPOSITORY_URL || `https://${host}/${projectPath}.git`;
+        let cloneUrl = baseUrl;
+        try {
+          const u = new URL(baseUrl);
+          const username = process.env.GITLAB_USERNAME || (process.env.CI_JOB_TOKEN ? "gitlab-ci-token" : "");
+          const password = process.env.GITLAB_TOKEN || process.env.CI_JOB_TOKEN || "";
+          if (username && password) {
+            u.username = encodeURIComponent(username);
+            u.password = encodeURIComponent(password);
+          }
+          cloneUrl = u.toString();
+        } catch {
+          // Fallback: keep baseUrl as-is
+        }
+
+        logger.start(`Cloning ${host}/${projectPath} into ${targetDir}...`);
+        execFileSync("git", ["clone", cloneUrl, targetDir], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+        process.chdir(targetDir);
+        logger.success("Clone completed");
+      }
+
+      // Ensure we're on the desired working branch
+      ensureBranch(context.branch);
+    }
 
     const prompt = extractPrompt(context.note, context.triggerPhrase);
     if (!prompt) throw new Error("No prompt found after trigger phrase");
@@ -127,6 +175,7 @@ export async function run() {
         maxBuffer: 10 * 1024 * 1024,
         env: { ...process.env, OPENCODE_CONFIG: cfgPath },
       });
+
       logger.success("opencode completed");
     } catch (error) {
       const stderr = error?.stderr?.toString?.() || "";
@@ -140,6 +189,7 @@ export async function run() {
     if (gitStatus) {
       logger.info("Changes detected, committing...");
 
+      // Ensure correct branch before committing (harmless if already on it)
       ensureBranch(context.branch);
       const subject = `AI: ${prompt.substring(0, 60)}${prompt.length > 60 ? "..." : ""}`;
       const body = `Requested by @${context.author || "unknown"} in ${context.resourceType} #${context.resourceId}`;

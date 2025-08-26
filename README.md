@@ -190,6 +190,7 @@ This ensures that:
 ## Roadmap
 
 - [x] Create/Move to agent image to streamline the pipeline configuration
+- [ ] Move "In Procress..." comment to the gitlab-app to provide faster feedback
 - [ ] Add option to switch between `claude` and `opencode`
 - [ ] Add option to disable ratelimiting (removes redis dependency)
 - [ ] Show agent working in the pipeline logs
