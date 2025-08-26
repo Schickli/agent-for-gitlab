@@ -190,9 +190,10 @@ This ensures that:
 ## Roadmap
 
 - [x] Create/Move to agent image to streamline the pipeline configuration
+- [x] Move to `opencode`
 - [ ] Move "In Procress..." comment to the gitlab-app to provide faster feedback
-- [ ] Add option to switch between `claude` and `opencode`
 - [ ] Add option to disable ratelimiting (removes redis dependency)
-- [ ] Show agent working in the pipeline logs
+- [ ] Show agent working in the pipeline logs (Move to opencode sdk)
+- [ ] Refactor the runner to be more modular (So that other tools can be added more easily)
 - [ ] Try moving the comment and commiting logic to a agent tool (Enables custom commit messaages, better comments)
 - [ ] Cleanup `@ai` configuration (So that its not needed in both configurations)

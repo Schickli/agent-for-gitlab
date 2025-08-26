@@ -161,6 +161,7 @@ export async function run() {
         // Non-interactive single-turn message
         prompt,
         "--print-logs",
+        "--log-level DEBUG"
       ];
       if (opencodeModel) {
         args.push("--model", opencodeModel);
@@ -175,6 +176,8 @@ export async function run() {
         maxBuffer: 10 * 1024 * 1024,
         env: { ...process.env, OPENCODE_CONFIG: cfgPath },
       });
+
+      logger.info(aiOutput);
 
       logger.success("opencode completed");
     } catch (error) {
