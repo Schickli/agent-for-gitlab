@@ -194,12 +194,12 @@ export async function run() {
       const subject = `AI: ${prompt.substring(0, 60)}${prompt.length > 60 ? "..." : ""}`;
       const body = `Requested by @${context.author || "unknown"} in ${context.resourceType} #${context.resourceId}`;
 
-      const host = process.env.CI_SERVER_HOST || "gitlab.com";
-      configureUser(host);
-      commitAll(subject, body);
-
       const username = process.env.GITLAB_USERNAME;
+      configureUser(username);
+      commitAll(subject, body);
+      
       const token = process.env.GITLAB_TOKEN;
+      const host = process.env.CI_SERVER_HOST || "gitlab.com";
       if (!username) throw new Error("To push with a Personal Access Token, set GITLAB_USERNAME");
       pushWithToken(host, context.projectPath, context.branch, username, token);
 

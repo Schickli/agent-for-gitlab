@@ -21,11 +21,11 @@ export function gitStatusPorcelain() {
   }).trim();
 }
 
-export function configureUser(host) {
-  execFileSync("git", ["config", "user.name", "AI Bot"], {
+export function configureUser(username) {
+  execFileSync("git", ["config", "user.name", username], {
     encoding: "utf8",
   });
-  execFileSync("git", ["config", "user.email", `ai-bot@${host}`], {
+  execFileSync("git", ["config", "user.email", `${username}@buhlergroup.com`], {
     encoding: "utf8",
   });
 }

@@ -24,7 +24,7 @@ export async function triggerPipeline(
     const token = process.env.GITLAB_TOKEN!;
 
     // Transform variables to GitLab API format
-    const pipelineVariables = variables
+    let pipelineVariables: Array<{ key: string; value: string }> = variables
       ? Object.entries(variables).map(([key, value]) => ({ key, value }))
       : [];
 
@@ -41,15 +41,31 @@ export async function triggerPipeline(
       },
     });
 
+    // Ensure only the AI job is selected by rules in the pipeline (ai_webhook_handler)
+    // The .gitlab-ci.yml uses `rules: if: '$AI_TRIGGER == "true"'` on the ai job.
+    // We set AI_TRIGGER=true here so that job is included and others can be skipped by rules.
+    const hasAiTrigger = pipelineVariables.some((v) => v.key === "AI_TRIGGER");
+    if (!hasAiTrigger) {
+      pipelineVariables.push({ key: "AI_TRIGGER", value: "true" });
+    } else {
+      // normalize to "true" if provided differently
+      pipelineVariables = pipelineVariables.map((v) =>
+        v.key === "AI_TRIGGER" ? { ...v, value: "true" } : v,
+      );
+    }
+
     const response = await fetch(
       `${gitlabUrl}/api/v4/projects/${projectId}/pipeline`,
       {
-        method: "POST",
-        headers: {
-          "PRIVATE-TOKEN": token,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
+      method: "POST",
+      headers: {
+        "PRIVATE-TOKEN": token,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ...requestBody,
+        variables: pipelineVariables,
+      }),
       },
     );
 
@@ -110,16 +126,16 @@ export async function cancelOldPipelines(
     logger.debug("Fetching pipelines for cancellation", { projectId, ref });
 
     // List pipelines for the ref
-    const pipelines = await gitlab.Pipelines.all(projectId, {
+  const pipelines: Array<{ id: number }> = await gitlab.Pipelines.all(projectId, {
       ref,
       status: "pending",
     });
 
     // Cancel old pipelines
     const cancelPromises = pipelines
-      .filter((p) => p.id !== keepPipelineId)
-      .map((p) =>
-        gitlab.Pipelines.cancel(projectId, p.id).catch((err) => {
+      .filter((p: { id: number }) => p.id !== keepPipelineId)
+      .map((p: { id: number }) =>
+        gitlab.Pipelines.cancel(projectId, p.id).catch((err: unknown) => {
           logger.warn(`Failed to cancel pipeline ${p.id}:`, {
             error: err instanceof Error ? err.message : err,
           });
