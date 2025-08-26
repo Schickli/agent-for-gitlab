@@ -4,7 +4,7 @@
 
 A lightweight webhook server that listens for `@ai` mentions in GitLab issues and merge requests, then triggers pipelines automatically.
 
-This project was forked from [RealMikeChong](https://github.com/RealMikeChong/ai-code-for-gitlab). I cleaned it up and fixed different existing bugs.
+This project was forked from [RealMikeChong](https://github.com/RealMikeChong/ai-code-for-gitlab). I used his gitlab webhook app and refactored the runner. 
 
 ## Features
 
@@ -171,3 +171,11 @@ This ensures that:
 * Protected branches remain safe from automated changes
 * Each AI execution has its own isolated branch
 * Failed branch creation stops the process entirely (*fail-safe behavior*)
+
+## Roadmap
+
+- [ ] Add option to switch between `claude` and `opencode`.
+- [ ] Add option to disable ratelimiting (removes redis dependency)
+- [ ] Show agent working in the pipeline logs
+- [ ] Try moving the comment and commiting logic to a agent tool (Enables custom commit messaages, better comments)
+- [ ] Cleanup `@ai` configuration (So that its not needed in both configurations) 
