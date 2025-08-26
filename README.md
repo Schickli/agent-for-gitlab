@@ -1,10 +1,10 @@
-![Comments Showcase](./docs/assets/header.png)
-
 # @AI in GitLab
+
+![Comments Showcase](./docs/assets/header.png)
 
 A lightweight webhook server that listens for `@ai` mentions in GitLab issues and merge requests, then triggers pipelines automatically.
 
-This project was forked from [RealMikeChong](https://github.com/RealMikeChong/claude-code-for-gitlab). I used his gitlab webhook app and refactored the runner. 
+This project was forked from [RealMikeChong](https://github.com/RealMikeChong/claude-code-for-gitlab). I used his gitlab webhook app and refactored the runner.
 
 ## Features
 
@@ -37,7 +37,7 @@ Add the **Comments** trigger for the webhook.
 ### GitLab Pipeline
 
 The agent will run in the GitLab CI/CD environment. This is ideal because that way we already have an isolated environment with all necessary tools and permissions.  
-For that, we use the `agent-image` Docker image. This provides the agent with the required dependencies for `C#` and `Node.js`. You can easily customize the base image we use in this pipeline step in `agent-image/Dockerfile`.
+For that, we use the `agent-image` Docker image. This provides the agent with the required dependencies for `C#` and `Node.js`, and the opencode CLI for multi-provider LLMs. You can easily customize the base image in `agent-image/Dockerfile`.
 
 #### Build Agent Image
 
@@ -47,7 +47,7 @@ The agent image in `agent-image/` serves as the reusable base for CI jobs that r
   - .NET SDK version: 8 (can be changed)
   - Node.js version: 24.x (can also be changed)
   - Source and available tags: <https://github.com/DotNet-Docker-Images/dotnet-nodejs-docker>
-- Includes git, curl, jq, and the modular runner (`ai-runner`).
+- Includes git, curl, jq, opencode CLI, and the modular runner (`ai-runner`).
 
 Build and publish the image to your registry of choice, or use the prebuilt one and reference it in CI via the `AI_AGENT_IMAGE` variable.
 
@@ -57,11 +57,25 @@ Then set in your GitLab CI/CD variables:
 
 #### Create Pipeline
 
-You will need to add the following CI/CD Variables in your GitLab Pipeline setup (add them under **Settings → CI/CD → Variables**):
+You will need to add the following CI/CD variables in your GitLab project (Settings → CI/CD → Variables):
 
-- `ANTHROPIC_API_KEY`: Your Anthropic API Key
+- Provider API key(s) depending on which model you want to use via opencode. Common ones:
+  - `OPENAI_API_KEY`
+  - `ANTHROPIC_API_KEY`
+  - `OPENROUTER_API_KEY`
+  - `GROQ_API_KEY`
+  - `TOGETHER_API_KEY`
+  - `DEEPSEEK_API_KEY`
+  - `FIREWORKS_API_KEY`
+  - `CEREBRAS_API_KEY`
+  - `Z_API_KEY`
+  - Or Azure OpenAI envs: `AZURE_OPENAI_API_KEY`, `AZURE_RESOURCE_NAME`: Your Azure OpenAI resource name (e.g., `my-azure-openai`). `OPENCODE_MODEL` then needs to be `azure/{Deployment Name}`.
+  - Or Bedrock envs: `AWS_ACCESS_KEY_ID` (or `AWS_PROFILE` / `AWS_BEARER_TOKEN_BEDROCK`)
+
 - `GITLAB_TOKEN`: Your GitLab Personal Access Token (with `api`, `read_repository`, `write_repository` permissions)
 - `GITLAB_USERNAME`: Your GitLab Username (of the used account)
+- `OPENCODE_MODEL`: The model to use in `provider/model` format, e.g. `anthropic/claude-sonnet-4-20250514`
+- Optional: `OPENCODE_AGENT_PROMPT`: Custom prompt for the opencode agent
 
 **Important:** The variables should not be *protected variables*.  
 Copy the `.gitlab-ci.yml` file in `gitlab-utils` to your project root, or add the important parts to your existing configuration.
@@ -125,37 +139,38 @@ Run the following steps in the `gitlab-app` directory:
 
 ### Environment Variables for the GitLab Webhook App (in `.env` or Docker build args)
 
-* `GITLAB_URL`: GitLab instance URL (default: [https://gitlab.com](https://gitlab.com), e.g. [https://gitlab.company.com](https://gitlab.company.com))
-* `GITLAB_TOKEN`: Personal access token with `api` scope
-* `PORT`: Server port (default: 3000)
-* `REDIS_URL`: Redis connection URL
-* `RATE_LIMIT_MAX`: Max requests per window (default: 3)
-* `RATE_LIMIT_WINDOW`: Time window in seconds (default: 900)
-* `CANCEL_OLD_PIPELINES`: Cancel older pending pipelines (default: true)
-* `ADMIN_TOKEN`: Optional admin token for `/admin` endpoints
-* `TRIGGER_PHRASE`: Custom trigger phrase instead of `@ai` (default: `@ai`) **Set also in the pipeline**
-* `BRANCH_PREFIX`: Prefix for branches created by AI (default: `ai`)
+- `GITLAB_URL`: GitLab instance URL (default: [https://gitlab.com](https://gitlab.com), e.g. [https://gitlab.company.com](https://gitlab.company.com))
+- `GITLAB_TOKEN`: Personal access token with `api` scope
+- `PORT`: Server port (default: 3000)
+- `REDIS_URL`: Redis connection URL
+- `RATE_LIMIT_MAX`: Max requests per window (default: 3)
+- `RATE_LIMIT_WINDOW`: Time window in seconds (default: 900)
+- `CANCEL_OLD_PIPELINES`: Cancel older pending pipelines (default: true)
+- `ADMIN_TOKEN`: Optional admin token for `/admin` endpoints
+- `TRIGGER_PHRASE`: Custom trigger phrase instead of `@ai` (default: `@ai`) **Set also in the pipeline**
+- `BRANCH_PREFIX`: Prefix for branches created by AI (default: `ai`)
 
 ### Pipeline Variables (`.gitlab-ci.yml`)
 
 When a pipeline is triggered, these variables are available:
 
-* `AI_MODEL`: The model used for AI (default: `sonnet`)
-* `AI_INSTRUCTIONS`: Instructions for AI's behavior
-* `TRIGGER_PHRASE`: The trigger phrase used (e.g., `@ai`) **Set also in the `.env` file**
-* `AI_AGENT_IMAGE`: The Docker image for the AI agent
+- `OPENCODE_MODEL`: The model used by opencode in `provider/model` form (e.g., `openrouter/deepseek/deepseek-reasoner`)
+- `OPENCODE_AGENT_PROMPT`: Optional agent prompt for opencode
+- `TRIGGER_PHRASE`: The trigger phrase used (e.g., `@ai`) **Set also in the `.env` file**
+- `AI_AGENT_IMAGE`: The Docker image for the AI agent
 
-### GitLab CI/CD Variables
+### GitLab CI/CD Variables (Keys)
 
-* `ANTHROPIC_API_KEY`: Your Anthropic API Key
-* `GITLAB_TOKEN`: Your GitLab Personal Access Token (with `api`, `read_repository`, `write_repository` permissions)
-* `GITLAB_USERNAME`: Your GitLab Username (of the used account)
+Set the appropriate provider key(s) for your chosen `OPENCODE_MODEL` as listed above, plus:
+
+- `GITLAB_TOKEN`: Your GitLab Personal Access Token (with `api`, `read_repository`, `write_repository` permissions)
+- `GITLAB_USERNAME`: Your GitLab Username (of the used account)
 
 ### Admin Endpoints
 
-* `GET /health` — Health check
-* `GET /admin/disable` — Disable bot (requires Bearer token)
-* `GET /admin/enable` — Enable bot (requires Bearer token)
+- `GET /health` — Health check
+- `GET /admin/disable` — Disable bot (requires Bearer token)
+- `GET /admin/enable` — Enable bot (requires Bearer token)
 
 ## Branch Creation Behavior
 
@@ -168,15 +183,15 @@ When AI is triggered from a GitLab issue comment:
 
 This ensures that:
 
-* Protected branches remain safe from automated changes
-* Each AI execution has its own isolated branch
-* Failed branch creation stops the process entirely (*fail-safe behavior*)
+- Protected branches remain safe from automated changes
+- Each AI execution has its own isolated branch
+- Failed branch creation stops the process entirely (*fail-safe behavior*)
 
 ## Roadmap
 
-- [x] Create/Move to agent image to streamline the pipeline configuration 
+- [x] Create/Move to agent image to streamline the pipeline configuration
 - [ ] Add option to switch between `claude` and `opencode`
 - [ ] Add option to disable ratelimiting (removes redis dependency)
 - [ ] Show agent working in the pipeline logs
 - [ ] Try moving the comment and commiting logic to a agent tool (Enables custom commit messaages, better comments)
-- [ ] Cleanup `@ai` configuration (So that its not needed in both configurations) 
+- [ ] Cleanup `@ai` configuration (So that its not needed in both configurations)

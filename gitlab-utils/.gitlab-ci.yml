@@ -6,9 +6,10 @@ stages:
 
 variables:
   # Specify the prebuilt agent image containing the runner and tools
-  AI_AGENT_IMAGE: "ghcr.io/schickli/claude-code-for-gitlab/agent-image:latest"
-  AI_MODEL: "sonnet"
-  AI_INSTRUCTIONS: |
+  AI_AGENT_IMAGE: "ghcr.io/schickli/ai-code-for-gitlab/agent-image:latest"
+  # opencode expects provider/model, e.g. anthropic/claude-sonnet-4-20250514 or openrouter/deepseek/deepseek-reasoner
+  OPENCODE_MODEL: "anthropic/claude-sonnet-4-20250514"
+  OPENCODE_AGENT_PROMPT: |
     You are a helpful assistant that fixes bugs and implements features.
     Always write tests for your changes.
     You have the .Net SDK 8 and Node 24 installed.
