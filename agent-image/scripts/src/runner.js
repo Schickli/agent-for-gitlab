@@ -94,7 +94,7 @@ export async function run() {
       "TOGETHER_API_KEY",
       "FIREWORKS_API_KEY",
       "OPENROUTER_API_KEY",
-      "AZURE_OPENAI_API_KEY",
+      "AZURE_API_KEY",
       "CEREBRAS_API_KEY",
       "Z_API_KEY",
       // Bedrock options
