@@ -68,44 +68,51 @@ export async function run() {
 
     // Agent prompt for opencode (optional)
     const agentPrompt = process.env.OPENCODE_AGENT_PROMPT || "";
-    
+
     // Azure OpenAI specific validation
     validateAzureConfig(opencodeModel);
-    
+
     logger.start("Running opencode via SDK...");
     let aiOutput = "";
     try {
+      const server = await createOpencodeServer({
+        hostname: "127.0.0.1",
+        port: 4096,
+      })
+
+      logger.info(`Server running at ${server.url}`)
+
       const client = createOpencodeClient({
         baseUrl: "http://localhost:4096",
       });
-      
+
       await client.app.init();
-      
+
       const session = await client.session.create({ title: "GitLab Runner Session" });
-      
+
       const [providerID, modelID] = opencodeModel.split('/');
       if (!providerID || !modelID) {
         throw new Error(`Invalid OPENCODE_MODEL format: ${opencodeModel}. Expected format: provider/model`);
       }
-      
+
       const message = await client.session.chat({
         id: session.id,
         providerID,
         modelID,
         parts: [{ type: "text", text: agentPrompt ? `${agentPrompt}\n\n${prompt}` : prompt }],
       });
-      
+
       const messageDetails = await client.session.message({
         id: session.id,
         messageID: message.id,
       });
-      
+
       // Extract text from response parts
       aiOutput = messageDetails.parts
         .filter(part => part.type === "text")
         .map(part => part.content)
         .join("\n");
-      
+
       logger.info(aiOutput);
       logger.success("opencode SDK completed");
     } catch (error) {
@@ -124,7 +131,7 @@ export async function run() {
       const username = process.env.GITLAB_USERNAME;
       configureUser(username);
       commitAll(subject, body);
-      
+
       const token = process.env.GITLAB_TOKEN;
       const host = process.env.CI_SERVER_HOST || "gitlab.com";
       if (!username) throw new Error("To push with a Personal Access Token, set GITLAB_USERNAME");
