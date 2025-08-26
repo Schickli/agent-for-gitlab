@@ -174,7 +174,8 @@ This ensures that:
 
 ## Roadmap
 
-- [ ] Add option to switch between `claude` and `opencode`.
+- [x] Create/Move to agent image to streamline the pipeline configuration 
+- [ ] Add option to switch between `claude` and `opencode`
 - [ ] Add option to disable ratelimiting (removes redis dependency)
 - [ ] Show agent working in the pipeline logs
 - [ ] Try moving the comment and commiting logic to a agent tool (Enables custom commit messaages, better comments)
