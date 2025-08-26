@@ -10,7 +10,7 @@ LABEL org.opencontainers.image.source="https://github.com/Schickli/ai-code-for-g
 RUN apt-get update && apt-get install -y git curl jq unzip && rm -rf /var/lib/apt/lists/*
 
 # Install opencode CLI for multi-provider model support
-RUN curl -fsSL https://opencode.ai/install | bash
+RUN npm install -g opencode-ai
 
 # Copy runner sources
 WORKDIR /opt/agent
