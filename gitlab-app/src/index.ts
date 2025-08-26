@@ -28,6 +28,7 @@ app.use("*", async (c, next) => {
   await next();
 
   const duration = Date.now() - start;
+  
   const status = c.res.status;
 
   logger.info(`${method} ${path} ${status} ${duration}ms`, {
