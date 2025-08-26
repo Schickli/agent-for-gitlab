@@ -1,10 +1,11 @@
-import { execFileSync } from "node:child_process";
-import { writeFileSync, existsSync } from "node:fs";
+import { createOpencodeClient } from "@opencode-ai/sdk";
 import path from "node:path";
 import logger from "./logger.js";
 import { requireEnv, postComment } from "./gitlab.js";
-import { ensureBranch, gitStatusPorcelain, configureUser, commitAll, pushWithToken } from "./git.js";
+import { isInsideGitRepo, setupLocalRepository, ensureBranch, gitStatusPorcelain, configureUser, commitAll, pushWithToken } from "./git.js";
 import { extractPrompt } from "./prompt.js";
+import { validateProviderKeys, validateAzureConfig } from "./config.js";
+import { writeOutput } from "./output.js";
 
 export async function run() {
   logger.info("AI GitLab Runner Started");
@@ -39,44 +40,9 @@ export async function run() {
       throw new Error("Missing project path. Set AI_PROJECT_PATH or CI_PROJECT_PATH (e.g. group/subgroup/project)");
     }
 
-    const isInsideGitRepo = () => {
-      try {
-        const out = execFileSync("git", ["rev-parse", "--is-inside-work-tree"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
-        return out === "true";
-      } catch {
-        return false;
-      }
-    };
-
     if (!isInsideGitRepo()) {
       const targetDir = path.resolve(process.env.AI_CHECKOUT_DIR || "./repo");
-      if (existsSync(path.join(targetDir, ".git"))) {
-        process.chdir(targetDir);
-        logger.info(`Using existing checkout at ${targetDir}`);
-      } else {
-        const baseUrl = process.env.CI_REPOSITORY_URL || `https://${host}/${projectPath}.git`;
-        let cloneUrl = baseUrl;
-        try {
-          const u = new URL(baseUrl);
-          const username = process.env.GITLAB_USERNAME || (process.env.CI_JOB_TOKEN ? "gitlab-ci-token" : "");
-          const password = process.env.GITLAB_TOKEN || process.env.CI_JOB_TOKEN || "";
-          if (username && password) {
-            u.username = encodeURIComponent(username);
-            u.password = encodeURIComponent(password);
-          }
-          cloneUrl = u.toString();
-        } catch {
-          // Fallback: keep baseUrl as-is
-        }
-
-        logger.start(`Cloning ${host}/${projectPath} into ${targetDir}...`);
-        execFileSync("git", ["clone", cloneUrl, targetDir], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
-        process.chdir(targetDir);
-        logger.success("Clone completed");
-      }
-
-      // Ensure we're on the desired working branch
-      ensureBranch(context.branch);
+      setupLocalRepository(host, projectPath, context.branch, targetDir);
     }
 
     const prompt = extractPrompt(context.note, context.triggerPhrase);
@@ -85,24 +51,8 @@ export async function run() {
 
     await postComment(context, "🤖 Getting the vibes started...");
 
-    // Prepare opencode configuration
-    const providerEnvVars = [
-      "OPENAI_API_KEY",
-      "ANTHROPIC_API_KEY",
-      "GROQ_API_KEY",
-      "DEEPSEEK_API_KEY",
-      "TOGETHER_API_KEY",
-      "FIREWORKS_API_KEY",
-      "OPENROUTER_API_KEY",
-      "AZURE_API_KEY",
-      "CEREBRAS_API_KEY",
-      "Z_API_KEY",
-      // Bedrock options
-      "AWS_ACCESS_KEY_ID",
-      "AWS_PROFILE",
-      "AWS_BEARER_TOKEN_BEDROCK",
-    ];
-    const hasAnyProviderKey = providerEnvVars.some((k) => !!process.env[k]);
+    // Validate provider configuration
+    const hasAnyProviderKey = validateProviderKeys();
     if (!hasAnyProviderKey) {
       logger.warn(
         "No provider API key detected in env. opencode may fail to start unless credentials are pre-configured via 'opencode auth login'.",
@@ -118,74 +68,48 @@ export async function run() {
 
     // Agent prompt for opencode (optional)
     const agentPrompt = process.env.OPENCODE_AGENT_PROMPT || "";
-
-    const cfg = {
-      $schema: "https://opencode.ai/config.json",
-      autoupdate: false,
-      ...(opencodeModel ? { model: opencodeModel } : {}),
-      permission: {
-        edit: "allow",
-        bash: "allow",
-      },
-      ...(agentPrompt
-        ? {
-          agent: {
-            "gitlab-runner": {
-              description: "Agent for GitLab automated code changes",
-              prompt: agentPrompt,
-              tools: {
-                write: true,
-                edit: true,
-              },
-            },
-          },
-        }
-        : {}),
-    };
-
-    // Azure OpenAI specific check: resource name is required by opencode when using the Azure provider
-    if (opencodeModel?.startsWith("azure/") && !process.env.AZURE_RESOURCE_NAME) {
-      throw new Error(
-        "OPENCODE_MODEL targets Azure, but AZURE_RESOURCE_NAME is not set. Define AZURE_RESOURCE_NAME (e.g., 'my-azure-openai').",
-      );
-    }
-
-    const cfgPath = path.resolve("./.opencode.ci.json");
-    writeFileSync(cfgPath, JSON.stringify(cfg, null, 2));
-
-    logger.start("Running opencode...");
+    
+    // Azure OpenAI specific validation
+    validateAzureConfig(opencodeModel);
+    
+    logger.start("Running opencode via SDK...");
     let aiOutput = "";
     try {
-      const args = [
-        "run",
-        // Non-interactive single-turn message
-        prompt,
-        "--print-logs",
-        "--log-level DEBUG"
-      ];
-      if (opencodeModel) {
-        args.push("--model", opencodeModel);
-      }
-      if (agentPrompt) {
-        args.push("--agent", "gitlab-runner");
-      }
-
-      aiOutput = execFileSync("opencode", args, {
-        encoding: "utf8",
-        stdio: ["pipe", "pipe", "pipe"],
-        maxBuffer: 10 * 1024 * 1024,
-        env: { ...process.env, OPENCODE_CONFIG: cfgPath },
+      const client = createOpencodeClient({
+        baseUrl: "http://localhost:4096",
       });
-
+      
+      await client.app.init();
+      
+      const session = await client.session.create({ title: "GitLab Runner Session" });
+      
+      const [providerID, modelID] = opencodeModel.split('/');
+      if (!providerID || !modelID) {
+        throw new Error(`Invalid OPENCODE_MODEL format: ${opencodeModel}. Expected format: provider/model`);
+      }
+      
+      const message = await client.session.chat({
+        id: session.id,
+        providerID,
+        modelID,
+        parts: [{ type: "text", text: agentPrompt ? `${agentPrompt}\n\n${prompt}` : prompt }],
+      });
+      
+      const messageDetails = await client.session.message({
+        id: session.id,
+        messageID: message.id,
+      });
+      
+      // Extract text from response parts
+      aiOutput = messageDetails.parts
+        .filter(part => part.type === "text")
+        .map(part => part.content)
+        .join("\n");
+      
       logger.info(aiOutput);
-
-      logger.success("opencode completed");
+      logger.success("opencode SDK completed");
     } catch (error) {
-      const stderr = error?.stderr?.toString?.() || "";
-      const stdout = error?.stdout?.toString?.() || "";
-      throw new Error(
-        `opencode execution failed: ${error.message}\nSTDOUT:\n${stdout}\nSTDERR:\n${stderr}`,
-      );
+      throw new Error(`opencode SDK execution failed: ${error.message}`);
     }
 
     const gitStatus = gitStatusPorcelain();
@@ -223,14 +147,11 @@ export async function run() {
       );
     }
 
-    const output = {
-      success: true,
+    writeOutput(true, {
       prompt,
       branch: context.branch,
       hasChanges: !!gitStatus,
-      timestamp: new Date().toISOString(),
-    };
-    writeFileSync("ai-output.json", JSON.stringify(output, null, 2));
+    });
   } catch (error) {
     logger.error(error.message);
     await postComment(
@@ -239,8 +160,7 @@ export async function run() {
       `\`\`\`\n${error.message}\n\`\`\`\n\n` +
       `Please check the pipeline logs for details.`,
     );
-    const output = { success: false, error: error.message, timestamp: new Date().toISOString() };
-    writeFileSync("ai-output.json", JSON.stringify(output, null, 2));
+    writeOutput(false, { error: error.message });
     process.exit(1);
   }
 }

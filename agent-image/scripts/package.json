@@ -6,7 +6,9 @@
   "bin": {
     "ai-runner": "./ai-runner.js"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@opencode-ai/sdk": "^0.5.27"
+  },
   "engines": {
     "node": ">=20"
   }
