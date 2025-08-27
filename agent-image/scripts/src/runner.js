@@ -42,7 +42,7 @@ export async function run() {
       );
     }
 
-    logger.info(`Working directory: ${process.cwd()}`);
+    logger.info(`Working directory: ${process.cwd()}`); // Should be /opt/agent/repo
 
     const aiOutput = await runOpencode(context, prompt);
 
@@ -53,6 +53,8 @@ export async function run() {
       branch: context.branch,
       aiOutput,
     });
+    
+    process.exit(0);
   } catch (error) {
     await handleError(context, error);
   }

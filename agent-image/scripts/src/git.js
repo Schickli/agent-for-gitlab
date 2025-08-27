@@ -2,12 +2,21 @@ import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import logger from "./logger.js";
-
 export function gitSetup(context) {
   // Set credential helper to store credentials
   execFileSync("git", ["config", "--global", "credential.helper", "store"], {
     encoding: "utf8",
   });
+
+  // Set author info if provided in context
+  if (context.username && context.email) {
+    execFileSync("git", ["config", "--global", "user.name", context.username], {
+      encoding: "utf8",
+    });
+    execFileSync("git", ["config", "--global", "user.email", context.email], {
+      encoding: "utf8",
+    });
+  }
 
   // Prepare credential approval input
   const credentialInput = [
@@ -97,7 +106,7 @@ export function setupLocalRepository(context) {
     process.chdir(targetDir);
     logger.info(`Using existing checkout at ${targetDir}`);
   } else {
-    const baseUrl = context.repositoryUrl || `https://${context.host}/${context.projectPath}.git`;
+    const baseUrl = `https://${context.host}/${context.projectPath}.git`;
     cloneRepository(baseUrl, targetDir);
     process.chdir(targetDir);
   }

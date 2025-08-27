@@ -7,9 +7,15 @@
     "ai-runner": "./ai-runner.js"
   },
   "dependencies": {
-    "@opencode-ai/sdk": "^0.5.27"
+    "@modelcontextprotocol/sdk": "^1.17.4",
+    "@opencode-ai/sdk": "^0.5.27",
+    "tsx": "^4.20.5",
+    "zod": "^3.25.76"
   },
   "engines": {
     "node": ">=20"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0"
   }
 }
