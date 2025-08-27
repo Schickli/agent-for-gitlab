@@ -3,53 +3,77 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import logger from "./logger.js";
 
+export function gitSetup(context) {
+  // Set credential helper to store credentials
+  execFileSync("git", ["config", "--global", "credential.helper", "store"], {
+    encoding: "utf8",
+  });
+
+  // Prepare credential approval input
+  const credentialInput = [
+    "protocol=https",
+    `host=${context.host}`,
+    `username=${context.username}`,
+    `password=${context.gitlabToken}`,
+    "",
+  ].join("\n");
+
+  // Approve credentials for git
+  execFileSync("git", ["credential", "approve"], {
+    input: credentialInput,
+    encoding: "utf8",
+  });
+
+  // Set additional git settings
+  execFileSync("git", ["config", "--global", "push.autoSetupRemote", "true"], {
+    encoding: "utf8",
+  });
+  execFileSync("git", ["config", "--global", "pull.rebase", "true"], {
+    encoding: "utf8",
+  });
+}
+
 export function currentBranch() {
   return execFileSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], {
     encoding: "utf8",
   }).trim();
 }
 
-export function ensureBranch(branch) {
+export function ensureBranch(context) {
   const cur = currentBranch();
-  if (cur !== branch) {
-    logger.info(`Checking out branch '${branch}' (was '${cur}')`);
-    execFileSync("git", ["checkout", "-B", branch], { encoding: "utf8" });
+  if (cur !== context.branch) {
+    logger.info(`Checking out branch '${context.branch}' (was '${cur}')`);
+    execFileSync("git", ["checkout", "-B", context.branch], { encoding: "utf8" });
   }
+
+  pullWithToken(context);
 }
 
-export function gitStatusPorcelain() {
-  return execFileSync("git", ["status", "--porcelain"], {
-    encoding: "utf8",
-  }).trim();
-}
-
-export function configureUser(username) {
-  execFileSync("git", ["config", "user.name", username], {
-    encoding: "utf8",
-  });
-  execFileSync("git", ["config", "user.email", `${username}@buhlergroup.com`], {
-    encoding: "utf8",
-  });
-}
-
-export function commitAll(subject, body) {
-  execFileSync("git", ["add", "-A"], { encoding: "utf8" });
-  execFileSync("git", ["commit", "-m", subject, "-m", body], {
-    encoding: "utf8",
-  });
-}
-
-export function pushWithToken(host, projectPath, branch, username, token) {
-  const remoteUrl = `https://${encodeURIComponent(username)}:${encodeURIComponent(token)}@${host}/${projectPath}.git`;
-  logger.start(`Pushing changes to ${host}/${projectPath}...`);
-  execFileSync("git", ["push", remoteUrl, branch], { encoding: "utf8" });
+export function pullWithToken(context) {
+  const remoteUrl = `https://${context.host}/${context.projectPath}.git`;
+  logger.start(`Pulling latest changes from ${context.host}/${context.projectPath}...`);
+  try {
+    // Use rebase strategy to handle divergent branches
+    execFileSync("git", ["pull", "--rebase", remoteUrl, context.branch], { encoding: "utf8" });
+  } catch (error) {
+    logger.warn("Pull with rebase failed, trying fetch and reset...");
+    try {
+      // Fetch the remote branch
+      execFileSync("git", ["fetch", remoteUrl, context.branch], { encoding: "utf8" });
+      // Reset to the remote branch (this will lose local commits, but that's ok for an agent)
+      execFileSync("git", ["reset", "--hard", "FETCH_HEAD"], { encoding: "utf8" });
+      logger.info("Successfully synced with remote branch");
+    } catch (fallbackError) {
+      logger.warn("All pull strategies failed, branch might not exist remotely yet");
+    }
+  }
 }
 
 export function isInsideGitRepo() {
   try {
-    const out = execFileSync("git", ["rev-parse", "--is-inside-work-tree"], { 
-      encoding: "utf8", 
-      stdio: ["ignore", "pipe", "ignore"] 
+    const out = execFileSync("git", ["rev-parse", "--is-inside-work-tree"], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"]
     }).trim();
     return out === "true";
   } catch {
@@ -59,37 +83,24 @@ export function isInsideGitRepo() {
 
 export function cloneRepository(cloneUrl, targetDir) {
   logger.start(`Cloning repository into ${targetDir}...`);
-  execFileSync("git", ["clone", cloneUrl, targetDir], { 
-    encoding: "utf8", 
-    stdio: ["ignore", "pipe", "pipe"] 
+  execFileSync("git", ["clone", cloneUrl, targetDir], {
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"]
   });
   logger.success("Clone completed");
 }
 
-export function setupLocalRepository(host, projectPath, branch, targetDir) {
+export function setupLocalRepository(context) {
+  const targetDir = path.resolve(context.checkoutDir);
+
   if (existsSync(path.join(targetDir, ".git"))) {
     process.chdir(targetDir);
     logger.info(`Using existing checkout at ${targetDir}`);
   } else {
-    const baseUrl = process.env.CI_REPOSITORY_URL || `https://${host}/${projectPath}.git`;
-    let cloneUrl = baseUrl;
-    try {
-      const u = new URL(baseUrl);
-      const username = process.env.GITLAB_USERNAME || (process.env.CI_JOB_TOKEN ? "gitlab-ci-token" : "");
-      const password = process.env.GITLAB_TOKEN || process.env.CI_JOB_TOKEN || "";
-      if (username && password) {
-        u.username = encodeURIComponent(username);
-        u.password = encodeURIComponent(password);
-      }
-      cloneUrl = u.toString();
-    } catch {
-      // Fallback: keep baseUrl as-is
-    }
-
-    cloneRepository(cloneUrl, targetDir);
+    const baseUrl = context.repositoryUrl || `https://${context.host}/${context.projectPath}.git`;
+    cloneRepository(baseUrl, targetDir);
     process.chdir(targetDir);
   }
 
-  // Ensure we're on the desired working branch
-  ensureBranch(branch);
+  ensureBranch(context);
 }

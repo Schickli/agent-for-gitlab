@@ -1,22 +1,14 @@
 import { request as httpsRequest } from "node:https";
 import logger from "./logger.js";
 
-const GITLAB_URL = process.env.CI_SERVER_URL || "https://gitlab.com";
-const GITLAB_TOKEN = process.env.GITLAB_TOKEN;
-const PROJECT_ID = process.env.CI_PROJECT_ID;
 
-export function requireEnv() {
-  if (!GITLAB_TOKEN) throw new Error("Missing GITLAB_TOKEN environment variable");
-  if (!PROJECT_ID) throw new Error("Missing CI_PROJECT_ID environment variable");
-}
-
-export function gitlabApi(method, path, data = null) {
+export function gitlabApi(context, method, path, data = null) {
   return new Promise((resolve, reject) => {
-    const url = new URL(`${GITLAB_URL}/api/v4${path}`);
+    const url = new URL(`${context.serverUrl}/api/v4${path}`);
     const options = {
       method,
       headers: {
-        "PRIVATE-TOKEN": GITLAB_TOKEN,
+        "PRIVATE-TOKEN": context.gitlabToken,
         "Content-Type": "application/json",
       },
     };
@@ -43,15 +35,15 @@ export function gitlabApi(method, path, data = null) {
   });
 }
 
-export async function postComment({ resourceType, resourceId }, message) {
+export async function postComment(context, message) {
   const endpoint =
-    (resourceType || "").toLowerCase() === "issue"
-      ? `/projects/${PROJECT_ID}/issues/${resourceId}/notes`
-      : `/projects/${PROJECT_ID}/merge_requests/${resourceId}/notes`;
+    (context.resourceType || "").toLowerCase() === "issue"
+      ? `/projects/${context.projectId}/issues/${context.resourceId}/notes`
+      : `/projects/${context.projectId}/merge_requests/${context.resourceId}/notes`;
 
   try {
-    await gitlabApi("POST", endpoint, { body: message });
-    logger.success(`Posted comment to ${resourceType} #${resourceId}`);
+    await gitlabApi(context, "POST", endpoint, { body: message });
+    logger.info(`Posted comment to ${context.resourceType} #${context.resourceId}`);
   } catch (error) {
     logger.error(`Failed to post comment: ${error.message}`);
   }
