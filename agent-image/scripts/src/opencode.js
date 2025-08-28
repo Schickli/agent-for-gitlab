@@ -3,37 +3,15 @@ import logger from "./logger.js";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { writeFileSync, readFileSync, existsSync, mkdirSync } from "node:fs";
+import { writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { homedir } from "node:os";
 
 export async function runOpencode(context, prompt) {
-  logger.start("Running opencode via SDK...");
-
-  const server = await createOpencodeServer({
-    hostname: "0.0.0.0",
-    port: 3001,
-  });
-
-  logger.info(`Server running at ${server.url}`);
+  logger.start("Running opencode via cli...");
 
   try {
     const configuration = startMCPServer(context);
     setOpenCodeMCPServerConfiguration(configuration);
-
-    const client = createOpencodeClient({
-      baseUrl: "http://0.0.0.0:3001",
-    });
-
-    await client.app.init();
-
-    const session = await client.session.create({ title: "GitLab Runner Session" });
-
-    if (session.error) {
-      logger.error("Session creation error: ", session.error.error);
-      throw new Error(`Session creation error: ${session.error.error}`);
-    }
-
-    logger.info("Session created: ", session.data.id);
 
     const [providerID, modelID] = context.opencodeModel.split('/');
     if (!providerID || !modelID) {
@@ -43,33 +21,32 @@ export async function runOpencode(context, prompt) {
     logger.info(`Using model: ${modelID} from provider: ${providerID}`);
 
     logger.info("Sending prompt to model ... this may take a while");
-    const message = await client.session.chat({
-      path: {
-        id: session.data.id,
-      },
-      body: {
-        modelID,
-        providerID,
-        system: context.agentPrompt || undefined,
-        parts: [{ type: "text", text: prompt }],
-        tools: {
-          "*": true,
-        }
-      },
+
+    const { spawnSync } = await import("node:child_process");
+    // Use the "opencode" CLI to send the prompt and get the response
+    const cliArgs = [
+      "--print-logs",
+      "--model", context.opencodeModel,
+    ];
+
+    logger.info(`Running: opencode ${cliArgs.join(" ")}`);
+
+    const result = spawnSync("opencode", "context.agentPrompt + '\n' + prompt", cliArgs, {
+      encoding: "utf-8"
     });
 
-    if (message.error) {
-      logger.error("AI response error: ", message.error.error);
-      throw new Error(`AI response error: ${message.error.error}`);
+    if (result.error) {
+      logger.error("Failed to run opencode CLI: ", result.error.message);
+      throw result.error;
+    }
+    if (result.status !== 0) {
+      logger.error("opencode CLI exited with error: ", result.stderr);
+      throw new Error(`opencode CLI failed: ${result.stderr}`);
     }
 
-    const aiOutput = message.data.parts
-      .filter(part => part.type === "text")
-      .map(part => part.text)
-      .join("\n");
-
+    const aiOutput = result.stdout.trim();
     logger.info(aiOutput);
-    logger.success("opencode SDK completed");
+    logger.success("opencode CLI completed");
 
     return aiOutput;
   } finally {

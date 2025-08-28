@@ -21,7 +21,12 @@ interface GitLabConfig {
 }
 
 // GitLab API helper function
-function gitlabApi(config: GitLabConfig, method: string, path: string, data: any = null): Promise<any> {
+function gitlabApi(
+  config: GitLabConfig,
+  method: string,
+  path: string,
+  data: any = null
+): Promise<any> {
   return new Promise((resolve, reject) => {
     const url = new URL(`${config.serverUrl}/api/v4${path}`);
     const options = {
@@ -36,14 +41,22 @@ function gitlabApi(config: GitLabConfig, method: string, path: string, data: any
       let body = "";
       res.on("data", (chunk) => (body += chunk));
       res.on("end", () => {
-        if (res.statusCode >= 200 && res.statusCode < 300) {
+        if (
+          typeof res.statusCode === "number" &&
+          res.statusCode >= 200 &&
+          res.statusCode < 300
+        ) {
           try {
             resolve(JSON.parse(body));
           } catch {
             resolve(body);
           }
         } else {
-          reject(new Error(`GitLab API error ${res.statusCode}: ${body}`));
+          reject(
+            new Error(
+              `GitLab API error ${res.statusCode ?? "unknown"}: ${body}`
+            )
+          );
         }
       });
     });
@@ -72,7 +85,10 @@ export class GitLabMCPServer {
       },
       {
         capabilities: {
-          tools: {},
+          tools: {
+            create_gitlab_comment: true,
+            get_gitlab_resource: true,
+          },
         },
       }
     );
@@ -86,7 +102,8 @@ export class GitLabMCPServer {
         tools: [
           {
             name: "create_gitlab_comment",
-            description: "Create a comment on a GitLab for the current issue or merge request",
+            description:
+              "Create a comment on a GitLab for the current issue or merge request",
             inputSchema: {
               type: "object",
               properties: {
@@ -100,7 +117,8 @@ export class GitLabMCPServer {
           },
           {
             name: "get_gitlab_resource",
-            description: "Get details of the current GitLab issue or merge request",
+            description:
+              "Get details of the current GitLab issue or merge request",
           },
         ],
       };
@@ -116,10 +134,7 @@ export class GitLabMCPServer {
         } else if (name === "get_gitlab_resource") {
           return await this.getResource();
         } else {
-          throw new McpError(
-            ErrorCode.MethodNotFound,
-            `Unknown tool: ${name}`
-          );
+          throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
         }
       } catch (error) {
         if (error instanceof z.ZodError) {
@@ -135,12 +150,13 @@ export class GitLabMCPServer {
 
   private async createComment(args: z.infer<typeof CreateCommentSchema>) {
     try {
-      const endpoint = this.config.resourceType === "issue"
-        ? `/projects/${this.config.projectId}/issues/${this.config.resourceId}/notes`
-        : `/projects/${this.config.projectId}/merge_requests/${this.config.resourceId}/notes`;
+      const endpoint =
+        this.config.resourceType === "issue"
+          ? `/projects/${this.config.projectId}/issues/${this.config.resourceId}/notes`
+          : `/projects/${this.config.projectId}/merge_requests/${this.config.resourceId}/notes`;
 
-      const response = await gitlabApi(this.config, "POST", endpoint, { 
-        body: args.message 
+      const response = await gitlabApi(this.config, "POST", endpoint, {
+        body: args.message,
       });
 
       return {
@@ -154,16 +170,19 @@ export class GitLabMCPServer {
     } catch (error) {
       throw new McpError(
         ErrorCode.InternalError,
-        `Failed to create comment: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to create comment: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
   }
 
   private async getResource() {
     try {
-      const endpoint = this.config.resourceType === "issue"
-        ? `/projects/${this.config.projectId}/issues/${this.config.resourceId}`
-        : `/projects/${this.config.projectId}/merge_requests/${this.config.resourceId}`;
+      const endpoint =
+        this.config.resourceType === "issue"
+          ? `/projects/${this.config.projectId}/issues/${this.config.resourceId}`
+          : `/projects/${this.config.projectId}/merge_requests/${this.config.resourceId}`;
 
       const response = await gitlabApi(this.config, "GET", endpoint);
 
@@ -171,28 +190,34 @@ export class GitLabMCPServer {
         content: [
           {
             type: "text",
-            text: JSON.stringify({
-              id: response.id,
-              title: response.title,
-              description: response.description,
-              state: response.state,
-              author: response.author,
-              created_at: response.created_at,
-              updated_at: response.updated_at,
-              web_url: response.web_url,
-              ...(this.config.resourceType === "merge_request" && {
-                source_branch: response.source_branch,
-                target_branch: response.target_branch,
-                merge_status: response.merge_status,
-              }),
-            }, null, 2),
+            text: JSON.stringify(
+              {
+                id: response.id,
+                title: response.title,
+                description: response.description,
+                state: response.state,
+                author: response.author,
+                created_at: response.created_at,
+                updated_at: response.updated_at,
+                web_url: response.web_url,
+                ...(this.config.resourceType === "merge_request" && {
+                  source_branch: response.source_branch,
+                  target_branch: response.target_branch,
+                  merge_status: response.merge_status,
+                }),
+              },
+              null,
+              2
+            ),
           },
         ],
       };
     } catch (error) {
       throw new McpError(
         ErrorCode.InternalError,
-        `Failed to get resource: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to get resource: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
   }
@@ -215,7 +240,9 @@ async function main() {
   };
 
   if (!config.gitlabToken || !config.projectId) {
-    console.error("Error: GITLAB_TOKEN and CI_PROJECT_ID environment variables are required");
+    console.error(
+      "Error: GITLAB_TOKEN and CI_PROJECT_ID environment variables are required"
+    );
     process.exit(1);
   }
 
