@@ -147,16 +147,17 @@ Run the following steps in the `gitlab-app` directory:
 - `RATE_LIMIT_WINDOW`: Time window in seconds (default: 900)
 - `CANCEL_OLD_PIPELINES`: Cancel older pending pipelines (default: true)
 - `ADMIN_TOKEN`: Optional admin token for `/admin` endpoints
-- `TRIGGER_PHRASE`: Custom trigger phrase instead of `@ai` (default: `@ai`) **Set also in the pipeline**
+- `TRIGGER_PHRASE`: Custom trigger phrase instead of `@ai` (default: `@ai`)
 - `BRANCH_PREFIX`: Prefix for branches created by AI (default: `ai`)
+- `OPENCODE_MODEL`: The model used by opencode in `provider/model` (for azure its the deployment name) form (e.g., `azure/gpt-4.1`)
+- `AI_GITLAB_USERNAME`: The GitLab username for the AI user (of the account the Gitlab Token is from)
+- `AI_GITLAB_EMAIL`: The GitLab email for the AI user (of the account the Gitlab Token is from)
 
 ### Pipeline Variables (`.gitlab-ci.yml`)
 
 When a pipeline is triggered, these variables are available:
 
-- `OPENCODE_MODEL`: The model used by opencode in `provider/model` form (e.g., `openrouter/deepseek/deepseek-reasoner`)
 - `OPENCODE_AGENT_PROMPT`: Optional agent prompt for opencode
-- `TRIGGER_PHRASE`: The trigger phrase used (e.g., `@ai`) **Set also in the `.env` file**
 - `AI_AGENT_IMAGE`: The Docker image for the AI agent
 
 ### GitLab CI/CD Variables (Keys)
@@ -164,7 +165,6 @@ When a pipeline is triggered, these variables are available:
 Set the appropriate provider key(s) for your chosen `OPENCODE_MODEL` as listed above, plus:
 
 - `GITLAB_TOKEN`: Your GitLab Personal Access Token (with `api`, `read_repository`, `write_repository` permissions)
-- `GITLAB_USERNAME`: Your GitLab Username (of the used account)
 
 ### Admin Endpoints
 
@@ -195,5 +195,5 @@ This ensures that:
 - [ ] Add option to disable ratelimiting (removes redis dependency)
 - [ ] Show agent working in the pipeline logs (Move to opencode sdk)
 - [ ] Refactor the runner to be more modular (So that other tools can be added more easily)
-- [ ] Try moving the comment and commiting logic to a agent tool (Enables custom commit messaages, better comments)
-- [ ] Cleanup `@ai` configuration (So that its not needed in both configurations)
+- [x] Try moving the comment and commiting logic to a agent tool (Enables custom commit messaages, better comments)
+- [x] Cleanup `@ai` configuration (So that its not needed in both configurations)

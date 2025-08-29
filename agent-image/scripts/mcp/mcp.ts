@@ -87,7 +87,7 @@ export class GitLabMCPServer {
         capabilities: {
           tools: {
             create_gitlab_comment: true,
-            get_gitlab_resource: true,
+            get_current_gitlab_resource: true,
           },
         },
       }
@@ -117,7 +117,7 @@ export class GitLabMCPServer {
             },
           },
           {
-            name: "get_gitlab_resource",
+            name: "get_current_gitlab_resource",
             description:
               "Get details of the current GitLab issue or merge request",
             inputSchema: {
@@ -137,8 +137,8 @@ export class GitLabMCPServer {
         if (name === "create_gitlab_comment") {
           const parsed = CreateCommentSchema.parse(args);
           return await this.createComment(parsed);
-        } else if (name === "get_gitlab_resource") {
-          return await this.getResource();
+        } else if (name === "get_current_gitlab_resource") {
+          return await this.getCurrentGitLabResource();
         } else {
           throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
         }
@@ -183,7 +183,7 @@ export class GitLabMCPServer {
     }
   }
 
-  private async getResource() {
+  private async getCurrentGitLabResource() {
     try {
       const endpoint =
         this.config.resourceType === "issue"
@@ -242,10 +242,9 @@ async function main() {
     gitlabToken: process.env.GITLAB_TOKEN || "",
     projectId: process.env.CI_PROJECT_ID || "",
     resourceId: process.env.AI_RESOURCE_ID || process.env.CI_ISSUE_IID || "",
-    resourceType:
-      (process.env.AI_RESOURCE_TYPE === "merge_request"
-        ? "merge_request"
-        : "issue") as "merge_request" | "issue",
+    resourceType: (process.env.AI_RESOURCE_TYPE === "merge_request"
+      ? "merge_request"
+      : "issue") as "merge_request" | "issue",
   };
 
   if (!config.gitlabToken || !config.projectId) {

@@ -1,5 +1,6 @@
 # GitLab CI/CD Configuration for AI Code Webhook Server
 # This pipeline is triggered by the webhook server when @ai is mentioned
+# If you drop this into an existing pipeline make sure that only the ai stage is triggered when $AI_TRIGGER is set.
 
 stages:
   - ai
@@ -7,15 +8,18 @@ stages:
 variables:
   # Specify the prebuilt agent image containing the runner and tools
   AI_AGENT_IMAGE: "ghcr.io/schickli/agent-for-gitlab/agent-image:latest"
-  # opencode expects provider/model, e.g. anthropic/claude-sonnet-4-20250514 or openrouter/deepseek/deepseek-reasoner
-  OPENCODE_MODEL: "anthropic/claude-sonnet-4-20250514"
   OPENCODE_AGENT_PROMPT: |
     You are a helpful assistant that fixes bugs and implements features.
-    Always write tests for your changes.
+    You are triggered from a merge request or a issue from Gitlab. 
+    If the user talks about "Fix this" or "Check this" he probably means the current issue or merge request he's on (Use the provided Tool to get more context)
+    
     You have the .Net SDK 8 and Node 24 installed.
-    If you did big code changes, you need to test them. (Give up after two failed attempts)
+    If you made big code changes, you need to test them. (Give up after two failed attempts)
     Follow the project's coding standards.
-  TRIGGER_PHRASE: "@AI"
+    
+    ALWAYS post a comment of you conclusion to Gitlab.
+    For long running Task update the User of your procress with Gitlab Comments.
+    ALWAYS commit and push your work after a task otherwise the changes are lost FOREVER!
 
 ai_webhook_handler:
   stage: ai
@@ -27,8 +31,6 @@ ai_webhook_handler:
     - echo "Resource ID:" ${AI_RESOURCE_ID}
     - echo "Branch:" ${AI_BRANCH}
     - echo "Author:" ${AI_AUTHOR}
-    - git fetch origin ${AI_BRANCH}:${AI_BRANCH} || true
-    - git checkout ${AI_BRANCH} || git checkout -b ${AI_BRANCH}
     - ai-runner
   rules:
     - if: '$AI_TRIGGER == "true"'

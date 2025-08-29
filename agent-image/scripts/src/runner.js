@@ -2,7 +2,6 @@ import logger from "./logger.js";
 import { buildContext } from "./context.js";
 import { postComment } from "./gitlab.js";
 import { isInsideGitRepo, setupLocalRepository, ensureBranch } from "./git.js";
-import { extractPrompt } from "./prompt.js";
 import { validateProviderKeys, validateConfig } from "./config.js";
 import { runOpencode } from "./opencode.js";
 import { writeOutput } from "./output.js";
@@ -29,9 +28,7 @@ export async function run() {
       ensureBranch(context);
     }
 
-    const prompt = extractPrompt(context.note, context.triggerPhrase);
-    if (!prompt) throw new Error("No prompt found after trigger phrase");
-    logger.info(`Prompt: ${prompt}`);
+    logger.info(`Prompt: ${context.prompt}`);
 
     await postComment(context, "🤖 Getting the vibes started...");
 
@@ -44,12 +41,12 @@ export async function run() {
 
     logger.info(`Working directory: ${process.cwd()}`); // Should be /opt/agent/repo
 
-    const aiOutput = await runOpencode(context, prompt);
+    const aiOutput = await runOpencode(context, context.prompt);
 
     logger.info(`Working directory after opencode: ${process.cwd()}`);
 
     writeOutput(true, {
-      prompt,
+      prompt: context.prompt,
       branch: context.branch,
       aiOutput,
     });
