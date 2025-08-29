@@ -113,12 +113,18 @@ export class GitLabMCPServer {
                 },
               },
               required: ["message"],
+              additionalProperties: false,
             },
           },
           {
             name: "get_gitlab_resource",
             description:
               "Get details of the current GitLab issue or merge request",
+            inputSchema: {
+              type: "object",
+              properties: {},
+              additionalProperties: false,
+            },
           },
         ],
       };
@@ -236,7 +242,10 @@ async function main() {
     gitlabToken: process.env.GITLAB_TOKEN || "",
     projectId: process.env.CI_PROJECT_ID || "",
     resourceId: process.env.AI_RESOURCE_ID || process.env.CI_ISSUE_IID || "",
-    resourceType: process.env.AI_RESOURCE_TYPE ? "merge_request" : "issue",
+    resourceType:
+      (process.env.AI_RESOURCE_TYPE === "merge_request"
+        ? "merge_request"
+        : "issue") as "merge_request" | "issue",
   };
 
   if (!config.gitlabToken || !config.projectId) {
