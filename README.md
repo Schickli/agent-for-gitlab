@@ -73,12 +73,11 @@ You will need to add the following CI/CD variables in your GitLab project (Setti
   - Or Bedrock envs: `AWS_ACCESS_KEY_ID` (or `AWS_PROFILE` / `AWS_BEARER_TOKEN_BEDROCK`)
 
 - `GITLAB_TOKEN`: Your GitLab Personal Access Token (with `api`, `read_repository`, `write_repository` permissions)
-- `GITLAB_USERNAME`: Your GitLab Username (of the used account)
-- `OPENCODE_MODEL`: The model to use in `provider/model` format, e.g. `anthropic/claude-sonnet-4-20250514`
-- Optional: `OPENCODE_AGENT_PROMPT`: Custom prompt for the opencode agent
 
 **Important:** The variables should not be *protected variables*.  
-Copy the `.gitlab-ci.yml` file in `gitlab-utils` to your project root, or add the important parts to your existing configuration.
+Copy the `.gitlab-ci.yml` file in `gitlab-utils` to your project root, or add the important parts to your existing configuration. The pipelines variables can also be added. I strongly recommend adapting the existing Agent Prompt.
+
+- Optional: `OPENCODE_AGENT_PROMPT`: Custom prompt for the opencode agent
 
 ### GitLab Webhook App
 
@@ -122,11 +121,12 @@ Run the following steps in the `gitlab-app` directory:
    cp .env.example .env
    ```
 
-2. Edit `.env` with your GitLab personal access token (or bot credentials with `api`, `read_repository`, `write_repository` permissions):
+2. Edit `.env` with your GitLab personal access token and all the other variables (or bot credentials with `api`, `read_repository`, `write_repository` permissions):
 
    ```env
    GITLAB_TOKEN=glpat-xxxxxxxxxxxxxxxxxxxx
    WEBHOOK_SECRET=your-webhook-secret-here
+   ...
    ```
 
 3. Deploy the application:
@@ -169,8 +169,8 @@ Set the appropriate provider key(s) for your chosen `OPENCODE_MODEL` as listed a
 ### Admin Endpoints
 
 - `GET /health` — Health check
-- `GET /admin/disable` — Disable bot (requires Bearer token)
-- `GET /admin/enable` — Enable bot (requires Bearer token)
+- `GET /admin/disable` — Disable bot (requires `ADMIN_TOKEN` token)
+- `GET /admin/enable` — Enable bot (requires `ADMIN_TOKEN` token)
 
 ## Branch Creation Behavior
 
@@ -191,7 +191,7 @@ This ensures that:
 
 - [x] Create/Move to agent image to streamline the pipeline configuration
 - [x] Move to `opencode`
-- [ ] Move "In Procress..." comment to the gitlab-app to provide faster feedback
+- [x] Move "In Procress..." comment to the gitlab-app to provide faster feedback
 - [ ] Add option to disable ratelimiting (removes redis dependency)
 - [ ] Show agent working in the pipeline logs (Move to opencode sdk)
 - [ ] Refactor the runner to be more modular (So that other tools can be added more easily)
