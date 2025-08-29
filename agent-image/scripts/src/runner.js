@@ -11,6 +11,7 @@ export async function run() {
   logger.info("AI GitLab Runner Started");
 
   const context = buildContext();
+  logger.warn(context) // Only for debugging
 
   logger.info(`Project: ${context.projectPath || "(unknown)"}`);
   logger.info(`Triggered by: @${context.author || "unknown"}`);

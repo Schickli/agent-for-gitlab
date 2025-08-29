@@ -6,6 +6,7 @@ import {
   getProject,
   createBranch,
   sanitizeBranchName,
+  postStartComment,
 } from "./gitlab";
 import { limitByUser } from "./limiter";
 import { logger } from "./logger";
@@ -236,6 +237,13 @@ app.post("/webhook", async (c) => {
       pipelineId,
       projectId,
       ref,
+    });
+
+    // Post a quick start comment (non-blocking errors)
+    await postStartComment(projectId, {
+      mrIid: mrIid ?? undefined,
+      issueIid: issueIid ?? undefined,
+      message: "Handing off to the agent...",
     });
 
     // Cancel old pipelines if configured

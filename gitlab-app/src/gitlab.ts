@@ -152,6 +152,79 @@ export async function cancelOldPipelines(
   }
 }
 
+// Post a simple startup comment on an MR or Issue
+export async function postStartComment(
+  projectId: number,
+  options: { mrIid?: number; issueIid?: number; message?: string },
+): Promise<void> {
+  const { mrIid, issueIid } = options;
+  const message = options.message ?? "Getting the vibes started";
+
+  if (!mrIid && !issueIid) {
+    logger.warn("postStartComment called without mrIid or issueIid", {
+      projectId,
+    });
+    return;
+  }
+
+  try {
+    const gitlabUrl = process.env.GITLAB_URL || "https://gitlab.com";
+    const token = process.env.GITLAB_TOKEN!;
+
+    const path = mrIid
+      ? `/api/v4/projects/${projectId}/merge_requests/${mrIid}/notes`
+      : `/api/v4/projects/${projectId}/issues/${issueIid}/notes`;
+
+    logger.debug("Posting start comment", {
+      projectId,
+      mrIid,
+      issueIid,
+      message,
+      url: `${gitlabUrl}${path}`,
+    });
+
+    const res = await fetch(`${gitlabUrl}${path}`, {
+      method: "POST",
+      headers: {
+        "PRIVATE-TOKEN": token,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ body: message }),
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      let errMsg = `Failed to post start comment: ${res.status} ${res.statusText}`;
+      try {
+        const data = JSON.parse(text);
+        errMsg = data.message || data.error || errMsg;
+      } catch {
+        // ignore JSON parse error; use raw text if informative
+        if (text) errMsg = `${errMsg} - ${text}`;
+      }
+      logger.warn("Start comment API error", {
+        projectId,
+        mrIid,
+        issueIid,
+        status: res.status,
+        statusText: res.statusText,
+        errMsg,
+      });
+      return; // Do not throw; comment is non-critical
+    }
+
+    logger.info("Start comment posted", { projectId, mrIid, issueIid });
+  } catch (error) {
+    logger.warn("Failed to post start comment", {
+      error: error instanceof Error ? error.message : error,
+      projectId,
+      mrIid,
+      issueIid,
+    });
+    // Non-critical, don't throw
+  }
+}
+
 // Get project details including default branch
 export async function getProject(projectId: number): Promise<{
   id: number;
