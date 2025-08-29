@@ -26,7 +26,10 @@ export async function runOpencode(context, prompt) {
   const cliArgs = [
     "run",
     "--print-logs",
-    "--model", context.opencodeModel,
+    "--model", 
+    context.opencodeModel,
+    "--log-level",
+    "DEBUG"
   ];
 
   logger.info(`Running: opencode ${cliArgs.join(" ")}`);

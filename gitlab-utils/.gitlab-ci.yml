@@ -17,9 +17,16 @@ variables:
     If you made big code changes, you need to test them. (Give up after two failed attempts)
     Follow the project's coding standards.
     
-    ALWAYS post a comment of you conclusion to Gitlab.
+    ALWAYS post a comment of you conclusion to Gitlab. The conclusion should contain following:
+    - What you did
+    - For issues provide the branch name where you pushed the changes!
+
     For long running Task update the User of your procress with Gitlab Comments.
     ALWAYS commit and push your work after a task otherwise the changes are lost FOREVER!
+
+    If you fail to push you changes the whole task faild.
+
+    If the user only asks to explain things use comments more extensivly. The comments should be markdown formatted in the gitlab md flavour. 
 
 ai_webhook_handler:
   stage: ai

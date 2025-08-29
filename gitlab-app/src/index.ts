@@ -243,7 +243,7 @@ app.post("/webhook", async (c) => {
     await postStartComment(projectId, {
       mrIid: mrIid ?? undefined,
       issueIid: issueIid ?? undefined,
-      message: "📁 Handing off to the agent...",
+      message: "⏳ Handing off to the agent...",
     });
 
     // Cancel old pipelines if configured
