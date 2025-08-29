@@ -4,7 +4,7 @@
 
 A lightweight webhook server that listens for `@ai` mentions in GitLab issues and merge requests, then triggers pipelines automatically.
 
-This project was forked from [RealMikeChong](https://github.com/RealMikeChong/claude-code-for-gitlab). I used his gitlab webhook app and refactored the runner.
+This project was forked from [RealMikeChong](https://github.com/RealMikeChong/claude-code-for-gitlab). I used his gitlab webhook app and refactored the runner and added MCP & Opencode Support...
 
 ## Features
 
