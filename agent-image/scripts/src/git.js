@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import logger from "./logger.js";
+
 export function gitSetup(context) {
   // Set credential helper to store credentials
   execFileSync("git", ["config", "--global", "credential.helper", "store"], {
