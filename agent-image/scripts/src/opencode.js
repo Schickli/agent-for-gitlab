@@ -29,7 +29,7 @@ export async function runOpencode(context, prompt) {
     "--model", 
     context.opencodeModel,
     "--log-level",
-    "DEBUG"
+    "INFO"
   ];
 
   logger.info(`Running: opencode ${cliArgs.join(" ")}`);

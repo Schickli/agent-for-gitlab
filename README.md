@@ -197,3 +197,4 @@ This ensures that:
 - [ ] Refactor the runner to be more modular (So that other tools can be added more easily)
 - [x] Try moving the comment and commiting logic to a agent tool (Enables custom commit messaages, better comments)
 - [x] Cleanup `@ai` configuration (So that its not needed in both configurations)
+- [ ] Create the pipeline on the merge request if the comment is on a merge request

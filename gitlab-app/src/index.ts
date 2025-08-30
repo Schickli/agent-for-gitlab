@@ -29,7 +29,7 @@ app.use("*", async (c, next) => {
   await next();
 
   const duration = Date.now() - start;
-  
+
   const status = c.res.status;
 
   logger.info(`${method} ${path} ${status} ${duration}ms`, {
@@ -49,7 +49,7 @@ app.get(
     process.env.AI_DISABLED = "true";
     logger.warn("Bot disabled via admin endpoint");
     return c.text("disabled");
-  },
+  }
 );
 
 app.get(
@@ -59,7 +59,7 @@ app.get(
     process.env.AI_DISABLED = "false";
     logger.info("Bot enabled via admin endpoint");
     return c.text("enabled");
-  },
+  }
 );
 
 // Single webhook endpoint for all projects
@@ -103,7 +103,7 @@ app.post("/webhook", async (c) => {
   const triggerPhrase = process.env.TRIGGER_PHRASE || "@ai";
   const triggerRegex = new RegExp(
     `${triggerPhrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`,
-    "i",
+    "i"
   );
 
   // Check for trigger phrase mention
@@ -117,14 +117,20 @@ app.post("/webhook", async (c) => {
     return c.text("disabled");
   }
 
-  // Rate limit: 3 triggers per author per MR/issue per 15 min
+  // Enable when we have a dedicated bot user
+  //
+  // if (process.env.AI_GITLAB_USERNAME === authorUsername) {
+  //   logger.warn("Ignoring self-triggered note");
+  //   return c.text("self-trigger");
+  // }
+
   const resourceId = mrIid || issueIid || "general";
   const key = `${authorUsername}:${projectId}:${resourceId}`;
 
   if (!(await limitByUser(key))) {
     logger.warn("Rate limit exceeded", { key, author: authorUsername });
 
-    return c.text("rate-limited", 429);
+    return c.text("rate-limited");
   }
 
   logger.info(`${triggerPhrase} triggered`, {
@@ -146,7 +152,9 @@ app.post("/webhook", async (c) => {
 
       // Generate branch name with timestamp to ensure uniqueness
       const timestamp = Date.now();
-      const branchName = `${process.env.BRANCH_PREFIX ?? "ai"}/issue-${issueIid}-${sanitizeBranchName(issueTitle || "")}-${timestamp}`;
+      const branchName = `${
+        process.env.BRANCH_PREFIX ?? "ai"
+      }/issue-${issueIid}-${sanitizeBranchName(issueTitle || "")}-${timestamp}`;
 
       logger.info("Creating branch for issue", {
         issueIid,
@@ -176,8 +184,8 @@ app.post("/webhook", async (c) => {
   const promptMatch = note.match(
     new RegExp(
       `${triggerPhrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s+(.*)`,
-      "is",
-    ),
+      "is"
+    )
   );
   const directPrompt = promptMatch ? promptMatch[1].trim() : "";
 
