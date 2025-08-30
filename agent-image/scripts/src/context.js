@@ -11,11 +11,10 @@ export function buildContext() {
     AI_GITLAB_USERNAME: process.env.AI_GITLAB_USERNAME,
     OPENCODE_MODEL: process.env.OPENCODE_MODEL,
     OPENCODE_AGENT_PROMPT: process.env.OPENCODE_AGENT_PROMPT,
-    GITLAB_TOKEN: process.env.GITLAB,
+    GITLAB_TOKEN: process.env.GITLAB_TOKEN,
     CI_SERVER_HOST: process.env.CI_SERVER_HOST,
     CI_PROJECT_ID: process.env.CI_PROJECT_ID,
     CI_SERVER_URL: process.env.CI_SERVER_URL,
-    CHECKOUT_DIR: process.env.CHECKOUT_DIR,
   });
 
 
