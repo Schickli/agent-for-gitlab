@@ -34,9 +34,8 @@ export async function triggerPipeline(
       variables: pipelineVariables,
     };
 
-    const baseUrl = mrIid
-      ? `${gitlabUrl}/api/v4/projects/${projectId}/merge_requests/${mrIid}/pipelines`
-      : `${gitlabUrl}/api/v4/projects/${projectId}/pipeline`;
+    // Important: Use the general pipeline endpoint so variables (like AI_TRIGGER) are honored
+    const baseUrl = `${gitlabUrl}/api/v4/projects/${projectId}/pipeline`;
 
     logger.debug("Pipeline request body", {
       url: baseUrl,

@@ -1,4 +1,3 @@
-import { createOpencodeClient, createOpencodeServer } from "@opencode-ai/sdk";
 import logger from "./logger.js";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -44,7 +43,7 @@ export async function runOpencode(context, prompt) {
     logger.error("opencode CLI exited with error: ", result.stderr);
     throw new Error(`opencode CLI failed: ${result.stderr}`);
   }
-  
+
   logger.success("opencode CLI completed");
 }
 
