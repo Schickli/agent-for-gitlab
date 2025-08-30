@@ -36,7 +36,7 @@ export async function runOpencode(context, prompt) {
   const result = spawnSync("opencode", cliArgs, {
     encoding: "utf-8",
     input: `${context.agentPrompt}\n${prompt}`,
-    stdio: ["pipe", process.stdout, process.stderr]
+    stdio: ["pipe", process.stderr] 
   });
 
   if (result.status !== 0) {
