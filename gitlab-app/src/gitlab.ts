@@ -11,15 +11,16 @@ export async function triggerPipeline(
   projectId: number,
   ref: string,
   variables?: Record<string, string>,
+  mrIid?: number
 ): Promise<number> {
   try {
     logger.debug("Creating pipeline", {
       projectId,
       ref,
       variables: logger.maskSensitive(variables),
+      mrIid,
     });
 
-    // Use fetch directly for better error handling
     const gitlabUrl = process.env.GITLAB_URL || "https://gitlab.com";
     const token = process.env.GITLAB_TOKEN!;
 
@@ -33,8 +34,12 @@ export async function triggerPipeline(
       variables: pipelineVariables,
     };
 
+    const baseUrl = mrIid
+      ? `${gitlabUrl}/api/v4/projects/${projectId}/merge_requests/${mrIid}/pipelines`
+      : `${gitlabUrl}/api/v4/projects/${projectId}/pipeline`;
+
     logger.debug("Pipeline request body", {
-      url: `${gitlabUrl}/api/v4/projects/${projectId}/pipeline`,
+      url: baseUrl,
       body: {
         ...requestBody,
         variables: logger.maskSensitive(pipelineVariables),
@@ -50,13 +55,11 @@ export async function triggerPipeline(
     } else {
       // normalize to "true" if provided differently
       pipelineVariables = pipelineVariables.map((v) =>
-        v.key === "AI_TRIGGER" ? { ...v, value: "true" } : v,
+        v.key === "AI_TRIGGER" ? { ...v, value: "true" } : v
       );
     }
 
-    const response = await fetch(
-      `${gitlabUrl}/api/v4/projects/${projectId}/pipeline`,
-      {
+    const response = await fetch(baseUrl, {
       method: "POST",
       headers: {
         "PRIVATE-TOKEN": token,
@@ -66,8 +69,7 @@ export async function triggerPipeline(
         ...requestBody,
         variables: pipelineVariables,
       }),
-      },
-    );
+    });
 
     const responseText = await response.text();
     let responseData;
@@ -81,7 +83,7 @@ export async function triggerPipeline(
         responseText,
       });
       throw new Error(
-        `Pipeline API returned invalid JSON: ${response.statusText}`,
+        `Pipeline API returned invalid JSON: ${response.statusText}`
       );
     }
 
@@ -92,11 +94,12 @@ export async function triggerPipeline(
         responseBody: responseData,
         projectId,
         ref,
+        mrIid,
       });
       throw new Error(
         responseData.message ||
           responseData.error ||
-          `Pipeline creation failed: ${response.statusText}`,
+          `Pipeline creation failed: ${response.statusText}`
       );
     }
 
@@ -112,6 +115,7 @@ export async function triggerPipeline(
       error: error instanceof Error ? error.message : error,
       projectId,
       ref,
+      mrIid,
     });
     throw error;
   }
@@ -120,16 +124,19 @@ export async function triggerPipeline(
 export async function cancelOldPipelines(
   projectId: number,
   keepPipelineId: number,
-  ref: string,
+  ref: string
 ): Promise<void> {
   try {
     logger.debug("Fetching pipelines for cancellation", { projectId, ref });
 
     // List pipelines for the ref
-  const pipelines: Array<{ id: number }> = await gitlab.Pipelines.all(projectId, {
-      ref,
-      status: "pending",
-    });
+    const pipelines: Array<{ id: number }> = await gitlab.Pipelines.all(
+      projectId,
+      {
+        ref,
+        status: "pending",
+      }
+    );
 
     // Cancel old pipelines
     const cancelPromises = pipelines
@@ -139,7 +146,7 @@ export async function cancelOldPipelines(
           logger.warn(`Failed to cancel pipeline ${p.id}:`, {
             error: err instanceof Error ? err.message : err,
           });
-        }),
+        })
       );
 
     await Promise.all(cancelPromises);
@@ -155,7 +162,7 @@ export async function cancelOldPipelines(
 // Post a simple startup comment on an MR or Issue
 export async function postStartComment(
   projectId: number,
-  options: { mrIid?: number; issueIid?: number; message?: string },
+  options: { mrIid?: number; issueIid?: number; message?: string }
 ): Promise<void> {
   const { mrIid, issueIid } = options;
   const message = options.message ?? "Getting the vibes started";
@@ -252,7 +259,7 @@ export async function getProject(projectId: number): Promise<{
 // Check if a branch exists
 export async function branchExists(
   projectId: number,
-  branchName: string,
+  branchName: string
 ): Promise<boolean> {
   try {
     logger.debug("Checking branch existence", { projectId, branchName });
@@ -276,7 +283,7 @@ export async function branchExists(
 export async function createBranch(
   projectId: number,
   branchName: string,
-  ref: string,
+  ref: string
 ): Promise<void> {
   try {
     logger.info("Creating new branch", { projectId, branchName, ref });
@@ -297,7 +304,7 @@ export async function createBranch(
           branch: branchName,
           ref: ref,
         }),
-      },
+      }
     );
 
     if (!response.ok) {

@@ -29,26 +29,23 @@ export async function runOpencode(context, prompt) {
     "--model", 
     context.opencodeModel,
     "--log-level",
-    "INFO"
+    "ERROR"
   ];
 
   logger.info(`Running: opencode ${cliArgs.join(" ")}`);
 
   const result = spawnSync("opencode", cliArgs, {
     encoding: "utf-8",
-    input: `${context.agentPrompt}\n${prompt}`
+    input: `${context.agentPrompt}\n${prompt}`,
+    stdio: ["pipe", process.stdout, process.stderr]
   });
 
   if (result.status !== 0) {
     logger.error("opencode CLI exited with error: ", result.stderr);
     throw new Error(`opencode CLI failed: ${result.stderr}`);
   }
-
-  const aiOutput = result.stdout.trim();
-  logger.info(aiOutput);
+  
   logger.success("opencode CLI completed");
-
-  return aiOutput;
 }
 
 function setOpenCodeMCPServerConfiguration(mcpServerConfig) {

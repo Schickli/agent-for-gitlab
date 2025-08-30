@@ -41,14 +41,13 @@ export async function run() {
 
     logger.info(`Working directory: ${process.cwd()}`); // Should be /opt/agent/repo
 
-    const aiOutput = await runOpencode(context, context.prompt);
+    await runOpencode(context, context.prompt);
 
     logger.info(`Working directory after opencode: ${process.cwd()}`);
 
     writeOutput(true, {
       prompt: context.prompt,
       branch: context.branch,
-      aiOutput,
     });
     
     process.exit(0);

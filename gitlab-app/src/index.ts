@@ -239,7 +239,12 @@ app.post("/webhook", async (c) => {
   });
 
   try {
-    const pipelineId = await triggerPipeline(projectId, ref, variables);
+    const pipelineId = await triggerPipeline(
+      projectId,
+      ref,
+      variables,
+      mrIid ?? undefined
+    );
 
     logger.info("Pipeline triggered successfully", {
       pipelineId,
