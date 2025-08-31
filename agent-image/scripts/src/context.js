@@ -10,7 +10,7 @@ export function buildContext() {
     username: process.env.AI_GITLAB_USERNAME,
     opencodeModel: process.env.OPENCODE_MODEL,
     agentPrompt: process.env.OPENCODE_AGENT_PROMPT || "",
-    gitlabToken: process.env.TEST_TOKEN,
+    gitlabToken: process.env.GITLAB_TOKEN,
     host: process.env.CI_SERVER_HOST || "gitlab.com",
     projectId: process.env.CI_PROJECT_ID,
     serverUrl: process.env.CI_SERVER_URL || "https://gitlab.com",
