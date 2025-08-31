@@ -11,6 +11,9 @@ export function gitSetup(context) {
 
   // Set author info if provided in context
   if (context.username && context.email) {
+
+    logger.info(`Configuring git user as ${context.username} <${context.email}>`);
+
     execFileSync("git", ["config", "--global", "user.name", context.username], {
       encoding: "utf8",
     });
@@ -27,6 +30,8 @@ export function gitSetup(context) {
     `password=${context.gitlabToken}`,
     "",
   ].join("\n");
+
+  logger.info(`Configured git for host ${context.host} as user ${context.username}`);
 
   // Approve credentials for git
   execFileSync("git", ["credential", "approve"], {
