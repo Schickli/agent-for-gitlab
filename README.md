@@ -192,9 +192,10 @@ This ensures that:
 - [x] Create/Move to agent image to streamline the pipeline configuration
 - [x] Move to `opencode`
 - [x] Move "In Procress..." comment to the gitlab-app to provide faster feedback
-- [ ] Add option to disable ratelimiting (removes redis dependency)
-- [ ] Show agent working in the pipeline logs (Move to opencode sdk)
-- [ ] Refactor the runner to be more modular (So that other tools can be added more easily)
+- [x] Show agent working in the pipeline logs
+- [x] Refactor the runner to be more modular (So that other tools can be added more easily)
 - [x] Try moving the comment and commiting logic to a agent tool (Enables custom commit messaages, better comments)
 - [x] Cleanup `@ai` configuration (So that its not needed in both configurations)
-- [ ] Create the pipeline on the merge request if the comment is on a merge request
+- [x] Create the pipeline on the merge request if the comment is on a merge request
+- [ ] Add option to disable ratelimiting (removes redis dependency)
+- [ ] Make the MCP support more generic (So that other platforms can be added more easily)
