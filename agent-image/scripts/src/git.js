@@ -44,16 +44,6 @@ export function gitSetup(context) {
   execFileSync("git", ["config", "--global", "pull.rebase", "true"], {
     encoding: "utf8",
   });
-
-  // Set default remote and branch for push
-  const remoteUrl = `https://${context.host}/${context.projectPath}.git`;
-  try {
-    execFileSync("git", ["remote", "remove", "origin"], { encoding: "utf8" });
-  } catch {}
-  execFileSync("git", ["remote", "add", "origin", remoteUrl], { encoding: "utf8" });
-  execFileSync("git", ["branch", "--set-upstream-to", `origin/${context.branch}`, context.branch], {
-    encoding: "utf8",
-  });
 }
 
 export function currentBranch() {
@@ -78,6 +68,7 @@ export function pullWithToken(context) {
   try {
     // Use rebase strategy to handle divergent branches
     execFileSync("git", ["pull", "--rebase", remoteUrl, context.branch], { encoding: "utf8" });
+    setRemote(context);
   } catch (error) {
     logger.warn("Pull with rebase failed, trying fetch and reset...");
     try {
@@ -85,11 +76,24 @@ export function pullWithToken(context) {
       execFileSync("git", ["fetch", remoteUrl, context.branch], { encoding: "utf8" });
       // Reset to the remote branch (this will lose local commits, but that's ok for an agent)
       execFileSync("git", ["reset", "--hard", "FETCH_HEAD"], { encoding: "utf8" });
+      setRemote(context);
       logger.info("Successfully synced with remote branch");
     } catch (fallbackError) {
       logger.warn("All pull strategies failed, branch might not exist remotely yet");
     }
   }
+}
+
+function setRemote(context) {
+  // Set default remote and branch for push
+  const remoteUrl = `https://${context.host}/${context.projectPath}.git`;
+  try {
+    execFileSync("git", ["remote", "remove", "origin"], { encoding: "utf8" });
+  } catch { }
+  execFileSync("git", ["remote", "add", "origin", remoteUrl], { encoding: "utf8" });
+  execFileSync("git", ["branch", "--set-upstream-to", `origin/${context.branch}`, context.branch], {
+    encoding: "utf8",
+  });
 }
 
 export function isInsideGitRepo() {
