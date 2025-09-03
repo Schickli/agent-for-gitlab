@@ -198,4 +198,7 @@ This ensures that:
 - [x] Cleanup `@ai` configuration (So that its not needed in both configurations)
 - [x] Create the pipeline on the merge request if the comment is on a merge request
 - [ ] Add option to disable ratelimiting (removes redis dependency)
-- [ ] Make the MCP support more generic (So that other platforms can be added more easily)
+- [ ] Add comment thread as context (So that the agent can see the full discussion)
+- [ ] Add a new tool to get the Jira ticket description and comments (So that the agent can see the full ticket)
+- [ ] Provide configuration for the MCP Servers (So that other MCP Servers can be added more easily)
+- [ ] Add the Sonar MCP Server
