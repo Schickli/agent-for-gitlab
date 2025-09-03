@@ -36,14 +36,21 @@ export function gitlabApi(context, method, path, data = null) {
 }
 
 export async function postComment(context, message) {
-  const endpoint =
-    (context.resourceType || "").toLowerCase() === "issue"
-      ? `/projects/${context.projectId}/issues/${context.resourceId}/notes`
-      : `/projects/${context.projectId}/merge_requests/${context.resourceId}/notes`;
+  const isIssue = (context.resourceType || "").toLowerCase() === "issue";
+  const discussionId = context.discussionId;
+  const endpoint = isIssue
+    ? `/projects/${context.projectId}/issues/${context.resourceId}/notes`
+    : discussionId
+    ? `/projects/${context.projectId}/merge_requests/${context.resourceId}/discussions/${discussionId}/notes`
+    : `/projects/${context.projectId}/merge_requests/${context.resourceId}/notes`;
 
   try {
     await gitlabApi(context, "POST", endpoint, { body: message });
-    logger.info(`Posted comment to ${context.resourceType} #${context.resourceId}`);
+    logger.info(
+      `Posted comment to ${context.resourceType} #${context.resourceId}$${
+        !isIssue && discussionId ? ` (discussion ${discussionId})` : ""
+      }`
+    );
   } catch (error) {
     logger.error(`Failed to post comment: ${error.message}`);
   }
