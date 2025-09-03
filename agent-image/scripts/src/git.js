@@ -11,9 +11,7 @@ export function gitSetup(context) {
 
   // Set author info if provided in context
   if (context.username && context.email) {
-
     logger.info(`Configuring git user as ${context.username} <${context.email}>`);
-
     execFileSync("git", ["config", "--global", "user.name", context.username], {
       encoding: "utf8",
     });
@@ -44,6 +42,16 @@ export function gitSetup(context) {
     encoding: "utf8",
   });
   execFileSync("git", ["config", "--global", "pull.rebase", "true"], {
+    encoding: "utf8",
+  });
+
+  // Set default remote and branch for push
+  const remoteUrl = `https://${context.host}/${context.projectPath}.git`;
+  try {
+    execFileSync("git", ["remote", "remove", "origin"], { encoding: "utf8" });
+  } catch {}
+  execFileSync("git", ["remote", "add", "origin", remoteUrl], { encoding: "utf8" });
+  execFileSync("git", ["branch", "--set-upstream-to", `origin/${context.branch}`, context.branch], {
     encoding: "utf8",
   });
 }
