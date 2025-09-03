@@ -99,6 +99,7 @@ app.post("/webhook", async (c) => {
   const issueTitle = body.issue?.title;
   const authorUsername = body.user?.username;
 
+  const discussionId = body.object_attributes?.discussion_id || "";
   // Get trigger phrase from environment or use default
   const triggerPhrase = process.env.TRIGGER_PHRASE || "@ai";
   const triggerRegex = new RegExp(
@@ -226,6 +227,7 @@ app.post("/webhook", async (c) => {
     AI_RESOURCE_ID: String(mrIid || issueIid || ""),
     AI_PROJECT_PATH: projectPath,
     AI_BRANCH: ref,
+  AI_DISCUSSION_ID: discussionId,
     OPENCODE_MODEL: process.env.OPENCODE_MODEL || "azure/gpt-4.1",
     TRIGGER_PHRASE: triggerPhrase,
     DIRECT_PROMPT: directPrompt,
@@ -257,6 +259,7 @@ app.post("/webhook", async (c) => {
       mrIid: mrIid ?? undefined,
       issueIid: issueIid ?? undefined,
       message: "⏳ Handing off to the agent...",
+      discussionId: discussionId || undefined,
     });
 
     // Cancel old pipelines if configured

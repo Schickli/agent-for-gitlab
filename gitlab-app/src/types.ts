@@ -25,6 +25,7 @@ export interface WebhookPayload {
     id: number;
     note?: string;
     noteable_type?: string;
+  discussion_id?: string;
     author_id: number;
     created_at: string;
     updated_at: string;

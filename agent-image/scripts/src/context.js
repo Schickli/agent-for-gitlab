@@ -4,6 +4,7 @@ export function buildContext() {
     author: process.env.AI_AUTHOR,
     resourceType: process.env.AI_RESOURCE_TYPE,
     resourceId: process.env.AI_RESOURCE_ID,
+  discussionId: process.env.AI_DISCUSSION_ID,
     prompt: process.env.DIRECT_PROMPT,
     branch: process.env.AI_BRANCH,
     email: process.env.AI_GITLAB_EMAIL,

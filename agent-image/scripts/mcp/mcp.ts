@@ -18,6 +18,7 @@ interface GitLabConfig {
   projectId: string;
   resourceId: string;
   resourceType: "issue" | "merge_request";
+  discussionId?: string; // if present for MR, reply in same discussion
 }
 
 // GitLab API helper function
@@ -156,10 +157,11 @@ export class GitLabMCPServer {
 
   private async createComment(args: z.infer<typeof CreateCommentSchema>) {
     try {
-      const endpoint =
-        this.config.resourceType === "issue"
-          ? `/projects/${this.config.projectId}/issues/${this.config.resourceId}/notes`
-          : `/projects/${this.config.projectId}/merge_requests/${this.config.resourceId}/notes`;
+      const endpoint = this.config.resourceType === "issue"
+        ? `/projects/${this.config.projectId}/issues/${this.config.resourceId}/notes`
+        : this.config.discussionId
+        ? `/projects/${this.config.projectId}/merge_requests/${this.config.resourceId}/discussions/${this.config.discussionId}/notes`
+        : `/projects/${this.config.projectId}/merge_requests/${this.config.resourceId}/notes`;
 
       const response = await gitlabApi(this.config, "POST", endpoint, {
         body: args.message,
@@ -245,6 +247,10 @@ async function main() {
     resourceType: (process.env.AI_RESOURCE_TYPE === "merge_request"
       ? "merge_request"
       : "issue") as "merge_request" | "issue",
+    discussionId:
+      process.env.AI_DISCUSSION_ID && process.env.AI_DISCUSSION_ID !== ""
+        ? process.env.AI_DISCUSSION_ID
+        : undefined,
   };
 
   if (!config.gitlabToken || !config.projectId) {

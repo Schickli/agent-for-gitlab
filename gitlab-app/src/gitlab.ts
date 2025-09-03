@@ -161,10 +161,16 @@ export async function cancelOldPipelines(
 // Post a simple startup comment on an MR or Issue
 export async function postStartComment(
   projectId: number,
-  options: { mrIid?: number; issueIid?: number; message?: string }
+  options: {
+    mrIid?: number;
+    issueIid?: number;
+    message?: string;
+    discussionId?: string; // if provided, reply in same discussion
+  }
 ): Promise<void> {
   const { mrIid, issueIid } = options;
   const message = options.message ?? "Getting the vibes started";
+  const discussionId = options.discussionId;
 
   if (!mrIid && !issueIid) {
     logger.warn("postStartComment called without mrIid or issueIid", {
@@ -177,9 +183,14 @@ export async function postStartComment(
     const gitlabUrl = process.env.GITLAB_URL || "https://gitlab.com";
     const token = process.env.GITLAB_TOKEN!;
 
-    const path = mrIid
-      ? `/api/v4/projects/${projectId}/merge_requests/${mrIid}/notes`
-      : `/api/v4/projects/${projectId}/issues/${issueIid}/notes`;
+    // When discussionId is present (MR only), post as a reply in that discussion thread.
+    // For issues, GitLab does not have discussions like MRs; we always post a note on the issue.
+    const path =
+      discussionId && mrIid
+        ? `/api/v4/projects/${projectId}/merge_requests/${mrIid}/discussions/${discussionId}/notes`
+        : mrIid
+        ? `/api/v4/projects/${projectId}/merge_requests/${mrIid}/notes`
+        : `/api/v4/projects/${projectId}/issues/${issueIid}/notes`;
 
     logger.debug("Posting start comment", {
       projectId,
