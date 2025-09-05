@@ -419,14 +419,11 @@ export async function getDiscussionThread(params: {
     const data: any = await res.json();
     const notes: any[] = data && Array.isArray(data.notes) ? data.notes : [];
 
+    logger.info(`Fetched ${notes.length} notes in discussion thread`);
+
     return notes
       .slice(0, -1) // Exclude the newest (last) note
-      .filter(
-        (n) =>
-          (includeSystem || !n.system) &&
-          typeof n.body === "string" &&
-          (n.body.includes("⏳") || n.body.includes("🤖"))
-      )
+      .filter((n) => includeSystem || !n.system)
       .map((n) => ({
         id: n.id,
         author: {

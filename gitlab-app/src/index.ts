@@ -205,7 +205,7 @@ app.post("/webhook", async (c) => {
         includeSystem: true,
       });
 
-      logger.info(`Found discussion thread notes: ${threadNotes.length}` ,);
+      logger.info(`Using ${threadNotes.length} discussion thread notes` ,);
 
       if (threadNotes.length > 0) {
         const formatted = threadNotes
