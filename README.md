@@ -10,6 +10,7 @@ This project was forked from [RealMikeChong](https://github.com/RealMikeChong/cl
 
 - Single webhook endpoint for all projects
 - Triggers pipelines when `@ai` is mentioned in comments (or your custom @)
+- Updates comment with progress (emoji reaction)
 - Configurable rate limiting
 - Works with personal access tokens (no OAuth required)
 - Minimal dependencies (Hono + Redis)
@@ -199,7 +200,7 @@ This ensures that:
 - [x] Cleanup `@ai` configuration (So that its not needed in both configurations)
 - [x] Create the pipeline on the merge request if the comment is on a merge request
 - [x] Add option to disable ratelimiting (removes redis dependency)
-- [ ] Add comment thread as context (So that the agent can see the full discussion)
+- [x] Add comment thread as context (So that the agent can see the full discussion)
 - [ ] Add a new tool to get the Jira ticket description and comments (So that the agent can see the full ticket)
 - [ ] Provide configuration for the MCP Servers (So that other MCP Servers can be added more easily)
 - [ ] Add the Sonar MCP Server

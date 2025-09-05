@@ -163,17 +163,23 @@ export async function addReactionToNote(params: {
   mrIid?: number;
   issueIid?: number;
   noteId: number;
-  emoji?: string; 
+  emoji?: string;
 }): Promise<void> {
   const { projectId, mrIid, issueIid, noteId } = params;
   const emoji = params.emoji || process.env.START_REACTION_EMOJI || "robot";
 
   if (!noteId) {
-    logger.warn("addReactionToNote called without noteId", { projectId, mrIid, issueIid });
+    logger.warn("addReactionToNote called without noteId", {
+      projectId,
+      mrIid,
+      issueIid,
+    });
     return;
   }
   if (!mrIid && !issueIid) {
-    logger.warn("addReactionToNote called without mrIid or issueIid", { projectId });
+    logger.warn("addReactionToNote called without mrIid or issueIid", {
+      projectId,
+    });
     return;
   }
   try {
@@ -184,7 +190,14 @@ export async function addReactionToNote(params: {
       ? `/api/v4/projects/${projectId}/merge_requests/${mrIid}/notes/${noteId}/award_emoji`
       : `/api/v4/projects/${projectId}/issues/${issueIid}/notes/${noteId}/award_emoji`;
 
-    logger.debug("Adding reaction to note", { projectId, mrIid, issueIid, noteId, emoji, url: `${gitlabUrl}${basePath}` });
+    logger.debug("Adding reaction to note", {
+      projectId,
+      mrIid,
+      issueIid,
+      noteId,
+      emoji,
+      url: `${gitlabUrl}${basePath}`,
+    });
 
     const res = await fetch(`${gitlabUrl}${basePath}`, {
       method: "POST",
@@ -209,7 +222,13 @@ export async function addReactionToNote(params: {
       return; // non-critical
     }
 
-    logger.info("Reaction added to note", { projectId, mrIid, issueIid, noteId, emoji });
+    logger.info("Reaction added to note", {
+      projectId,
+      mrIid,
+      issueIid,
+      noteId,
+      emoji,
+    });
   } catch (error) {
     logger.warn("Error adding reaction to note", {
       error: error instanceof Error ? error.message : error,
@@ -403,20 +422,20 @@ export async function getDiscussionThread(params: {
     return notes
       .slice(0, -1) // Exclude the newest (last) note
       .filter(
-      (n) =>
-        (includeSystem || !n.system) &&
-        typeof n.body === "string" &&
-        (n.body.includes("⏳") || n.body.includes("🤖"))
+        (n) =>
+          (includeSystem || !n.system) &&
+          typeof n.body === "string" &&
+          (n.body.includes("⏳") || n.body.includes("🤖"))
       )
       .map((n) => ({
-      id: n.id,
-      author: {
-        username: n.author?.username,
-        name: n.author?.name,
-      },
-      body: n.body || "",
-      created_at: n.created_at,
-      system: n.system,
+        id: n.id,
+        author: {
+          username: n.author?.username,
+          name: n.author?.name,
+        },
+        body: n.body || "",
+        created_at: n.created_at,
+        system: n.system,
       }));
   } catch (error) {
     logger.warn("Error fetching discussion thread", {

@@ -7,6 +7,7 @@ import {
   createBranch,
   sanitizeBranchName,
   addReactionToNote,
+  getDiscussionThread
 } from "./gitlab";
 import { limitByUser } from "./limiter";
 import { logger } from "./logger";
@@ -188,6 +189,7 @@ app.post("/webhook", async (c) => {
       "is"
     )
   );
+
   const directPrompt = promptMatch ? promptMatch[1].trim() : "";
   let aggregatedPrompt = directPrompt;
 
@@ -195,7 +197,6 @@ app.post("/webhook", async (c) => {
   if (discussionId) {
     try {
       // Lazy import to avoid circular deps if any
-      const { getDiscussionThread } = await import("./gitlab");
       const threadNotes = await getDiscussionThread({
         projectId: projectId!,
         mrIid: mrIid ?? undefined,
@@ -203,6 +204,8 @@ app.post("/webhook", async (c) => {
         discussionId,
         includeSystem: true,
       });
+
+      logger.info(`Found discussion thread notes: ${threadNotes.length}` ,);
 
       if (threadNotes.length > 0) {
         const formatted = threadNotes
@@ -273,7 +276,7 @@ app.post("/webhook", async (c) => {
     AI_DISCUSSION_ID: discussionId,
     OPENCODE_MODEL: process.env.OPENCODE_MODEL || "azure/gpt-4.1",
     TRIGGER_PHRASE: triggerPhrase,
-  DIRECT_PROMPT: aggregatedPrompt,
+    DIRECT_PROMPT: aggregatedPrompt,
     GITLAB_WEBHOOK_PAYLOAD: JSON.stringify(minimalPayload),
   };
 
