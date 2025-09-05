@@ -158,87 +158,66 @@ export async function cancelOldPipelines(
   }
 }
 
-// Post a simple startup comment on an MR or Issue
-export async function postStartComment(
-  projectId: number,
-  options: {
-    mrIid?: number;
-    issueIid?: number;
-    message?: string;
-    discussionId?: string; // if provided, reply in same discussion
-  }
-): Promise<void> {
-  const { mrIid, issueIid } = options;
-  const message = options.message ?? "Getting the vibes started";
-  const discussionId = options.discussionId;
+export async function addReactionToNote(params: {
+  projectId: number;
+  mrIid?: number;
+  issueIid?: number;
+  noteId: number;
+  emoji?: string; 
+}): Promise<void> {
+  const { projectId, mrIid, issueIid, noteId } = params;
+  const emoji = params.emoji || process.env.START_REACTION_EMOJI || "robot";
 
-  if (!mrIid && !issueIid) {
-    logger.warn("postStartComment called without mrIid or issueIid", {
-      projectId,
-    });
+  if (!noteId) {
+    logger.warn("addReactionToNote called without noteId", { projectId, mrIid, issueIid });
     return;
   }
-
+  if (!mrIid && !issueIid) {
+    logger.warn("addReactionToNote called without mrIid or issueIid", { projectId });
+    return;
+  }
   try {
     const gitlabUrl = process.env.GITLAB_URL || "https://gitlab.com";
     const token = process.env.GITLAB_TOKEN!;
 
-    // When discussionId is present (MR only), post as a reply in that discussion thread.
-    // For issues, GitLab does not have discussions like MRs; we always post a note on the issue.
-    const path =
-      discussionId && mrIid
-        ? `/api/v4/projects/${projectId}/merge_requests/${mrIid}/discussions/${discussionId}/notes`
-        : mrIid
-        ? `/api/v4/projects/${projectId}/merge_requests/${mrIid}/notes`
-        : `/api/v4/projects/${projectId}/issues/${issueIid}/notes`;
+    const basePath = mrIid
+      ? `/api/v4/projects/${projectId}/merge_requests/${mrIid}/notes/${noteId}/award_emoji`
+      : `/api/v4/projects/${projectId}/issues/${issueIid}/notes/${noteId}/award_emoji`;
 
-    logger.debug("Posting start comment", {
-      projectId,
-      mrIid,
-      issueIid,
-      message,
-      url: `${gitlabUrl}${path}`,
-    });
+    logger.debug("Adding reaction to note", { projectId, mrIid, issueIid, noteId, emoji, url: `${gitlabUrl}${basePath}` });
 
-    const res = await fetch(`${gitlabUrl}${path}`, {
+    const res = await fetch(`${gitlabUrl}${basePath}`, {
       method: "POST",
       headers: {
         "PRIVATE-TOKEN": token,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ body: message }),
+      body: JSON.stringify({ name: emoji }),
     });
 
     if (!res.ok) {
       const text = await res.text();
-      let errMsg = `Failed to post start comment: ${res.status} ${res.statusText}`;
-      try {
-        const data = JSON.parse(text);
-        errMsg = data.message || data.error || errMsg;
-      } catch {
-        // ignore JSON parse error; use raw text if informative
-        if (text) errMsg = `${errMsg} - ${text}`;
-      }
-      logger.warn("Start comment API error", {
+      logger.warn("Failed to add reaction", {
         projectId,
         mrIid,
         issueIid,
+        noteId,
         status: res.status,
         statusText: res.statusText,
-        errMsg,
+        body: text,
       });
-      return; // Do not throw; comment is non-critical
+      return; // non-critical
     }
 
-    logger.info("Start comment posted", { projectId, mrIid, issueIid });
+    logger.info("Reaction added to note", { projectId, mrIid, issueIid, noteId, emoji });
   } catch (error) {
-    logger.warn("Failed to post start comment", {
+    logger.warn("Error adding reaction to note", {
       error: error instanceof Error ? error.message : error,
       projectId,
       mrIid,
       issueIid,
+      noteId,
     });
-    // Non-critical, don't throw
   }
 }
 

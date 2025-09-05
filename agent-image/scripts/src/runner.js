@@ -30,7 +30,7 @@ export async function run() {
 
     logger.info(`Prompt: ${context.prompt}`);
 
-    await postComment(context, "🤖 Getting the vibes started...");
+    // await postComment(context, "🤖 Getting the vibes started...");
 
     const hasAnyProviderKey = validateProviderKeys();
     if (!hasAnyProviderKey) {

@@ -6,7 +6,7 @@ import {
   getProject,
   createBranch,
   sanitizeBranchName,
-  postStartComment,
+  addReactionToNote,
 } from "./gitlab";
 import { limitByUser } from "./limiter";
 import { logger } from "./logger";
@@ -297,13 +297,15 @@ app.post("/webhook", async (c) => {
       ref,
     });
 
-    // Post a quick start comment (non-blocking errors)
-    await postStartComment(projectId, {
-      mrIid: mrIid ?? undefined,
-      issueIid: issueIid ?? undefined,
-      message: "⏳ Handing off to the agent...",
-      discussionId: discussionId || undefined,
-    });
+    const triggeringNoteId = body.object_attributes?.id;
+    if (triggeringNoteId) {
+      await addReactionToNote({
+        projectId,
+        mrIid: mrIid ?? undefined,
+        issueIid: issueIid ?? undefined,
+        noteId: triggeringNoteId,
+      });
+    }
 
     // Cancel old pipelines if configured
     if (process.env.CANCEL_OLD_PIPELINES === "true") {
