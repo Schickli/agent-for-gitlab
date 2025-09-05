@@ -361,3 +361,86 @@ export function sanitizeBranchName(title: string): string {
     .replace(/^-|-$/g, "") // Remove leading/trailing dashes
     .substring(0, 50); // Limit length
 }
+
+// Fetch full discussion thread notes (excluding system notes unless includeSystem=true)
+export async function getDiscussionThread(params: {
+  projectId: number;
+  mrIid?: number;
+  issueIid?: number;
+  discussionId: string;
+  includeSystem?: boolean;
+}): Promise<
+  Array<{
+    id: string | number;
+    author: { username?: string; name?: string };
+    body: string;
+    created_at?: string;
+    system?: boolean;
+  }>
+> {
+  const { projectId, mrIid, issueIid, discussionId, includeSystem } = params;
+
+  if (!mrIid && !issueIid) {
+    logger.warn("getDiscussionThread called without mrIid or issueIid", {
+      projectId,
+      discussionId,
+    });
+    return [];
+  }
+
+  try {
+    const gitlabUrl = process.env.GITLAB_URL || "https://gitlab.com";
+    const token = process.env.GITLAB_TOKEN!;
+
+    // Issues in GitLab have discussions endpoint, merge requests use a similar path
+    const basePath = mrIid
+      ? `/api/v4/projects/${projectId}/merge_requests/${mrIid}/discussions/${discussionId}`
+      : `/api/v4/projects/${projectId}/issues/${issueIid}/discussions/${discussionId}`;
+
+    const url = `${gitlabUrl}${basePath}`;
+    logger.debug("Fetching discussion thread", { url });
+
+    const res = await fetch(url, {
+      headers: { "PRIVATE-TOKEN": token },
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      logger.warn("Failed to fetch discussion thread", {
+        status: res.status,
+        statusText: res.statusText,
+        text,
+        projectId,
+        mrIid,
+        issueIid,
+        discussionId,
+      });
+      return [];
+    }
+
+  const data: any = await res.json();
+  const notes: any[] = (data && Array.isArray(data.notes)) ? data.notes : [];
+
+    return notes
+      .filter((n) => includeSystem || !n.system)
+      .map((n) => ({
+        id: n.id,
+        author: {
+          username: n.author?.username,
+          name: n.author?.name,
+        },
+        body: n.body || "",
+        created_at: n.created_at,
+        system: n.system,
+      }));
+  } catch (error) {
+    logger.warn("Error fetching discussion thread", {
+      error: error instanceof Error ? error.message : error,
+      projectId,
+      mrIid,
+      issueIid,
+      discussionId,
+    });
+    return [];
+  }
+}

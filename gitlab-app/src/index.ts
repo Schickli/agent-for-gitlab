@@ -189,6 +189,49 @@ app.post("/webhook", async (c) => {
     )
   );
   const directPrompt = promptMatch ? promptMatch[1].trim() : "";
+  let aggregatedPrompt = directPrompt;
+
+  // If we have a discussion id, attempt to fetch the whole thread and prepend it
+  if (discussionId) {
+    try {
+      // Lazy import to avoid circular deps if any
+      const { getDiscussionThread } = await import("./gitlab");
+      const threadNotes = await getDiscussionThread({
+        projectId: projectId!,
+        mrIid: mrIid ?? undefined,
+        issueIid: issueIid ?? undefined,
+        discussionId,
+        includeSystem: true,
+      });
+
+      if (threadNotes.length > 0) {
+        const formatted = threadNotes
+          .map((n) => {
+            const author = n.author?.username || n.author?.name || "user";
+            const created = n.created_at ? ` (${n.created_at})` : "";
+            return `@${author}${created}:\n${n.body.trim()}`;
+          })
+          .join("\n\n---\n\n");
+
+        aggregatedPrompt = `Conversation Thread (most recent first below separator):\n\n${formatted}\n\n=== User Prompt ===\n${directPrompt}`.trim();
+      }
+    } catch (err) {
+      logger.warn("Failed to aggregate discussion thread", {
+        error: err instanceof Error ? err.message : err,
+        discussionId,
+      });
+    }
+  }
+
+  // Enforce size limit for CI variable safety
+  const MAX_PROMPT_CHARS = 8000;
+  if (aggregatedPrompt.length > MAX_PROMPT_CHARS) {
+    logger.warn("Aggregated prompt truncated", {
+      original: aggregatedPrompt.length,
+      max: MAX_PROMPT_CHARS,
+    });
+    aggregatedPrompt = aggregatedPrompt.slice(0, MAX_PROMPT_CHARS) + "\n...[truncated]";
+  }
 
   // Create minimal webhook payload for CI/CD variable (10KB limit)
   const minimalPayload = {
@@ -227,10 +270,10 @@ app.post("/webhook", async (c) => {
     AI_RESOURCE_ID: String(mrIid || issueIid || ""),
     AI_PROJECT_PATH: projectPath,
     AI_BRANCH: ref,
-  AI_DISCUSSION_ID: discussionId,
+    AI_DISCUSSION_ID: discussionId,
     OPENCODE_MODEL: process.env.OPENCODE_MODEL || "azure/gpt-4.1",
     TRIGGER_PHRASE: triggerPhrase,
-    DIRECT_PROMPT: directPrompt,
+  DIRECT_PROMPT: aggregatedPrompt,
     GITLAB_WEBHOOK_PAYLOAD: JSON.stringify(minimalPayload),
   };
 
