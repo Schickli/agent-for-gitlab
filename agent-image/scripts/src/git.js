@@ -92,11 +92,6 @@ function setRemote(context) {
   } catch { }
   logger.info(`Setting remote 'origin' to ${remoteUrl}`);
   execFileSync("git", ["remote", "add", "origin", remoteUrl], { encoding: "utf8" });
-  
-  logger.info(`Setting remote upstream branch to origin/${remoteUrl}`);
-  execFileSync("git", ["branch", "--set-upstream-to", `origin/${context.branch}`, context.branch], {
-    encoding: "utf8",
-  });
 }
 
 export function isInsideGitRepo() {
