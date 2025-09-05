@@ -422,21 +422,22 @@ export async function getDiscussionThread(params: {
     const notes: any[] = data && Array.isArray(data.notes) ? data.notes : [];
 
     return notes
+      .slice(0, -1) // Exclude the newest (last) note
       .filter(
-        (n) =>
-          (includeSystem || !n.system) &&
-          typeof n.body === "string" &&
-          (n.body.includes("⏳") || n.body.includes("🤖"))
+      (n) =>
+        (includeSystem || !n.system) &&
+        typeof n.body === "string" &&
+        (n.body.includes("⏳") || n.body.includes("🤖"))
       )
       .map((n) => ({
-        id: n.id,
-        author: {
-          username: n.author?.username,
-          name: n.author?.name,
-        },
-        body: n.body || "",
-        created_at: n.created_at,
-        system: n.system,
+      id: n.id,
+      author: {
+        username: n.author?.username,
+        name: n.author?.name,
+      },
+      body: n.body || "",
+      created_at: n.created_at,
+      system: n.system,
       }));
   } catch (error) {
     logger.warn("Error fetching discussion thread", {
