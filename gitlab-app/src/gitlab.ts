@@ -418,11 +418,16 @@ export async function getDiscussionThread(params: {
       return [];
     }
 
-  const data: any = await res.json();
-  const notes: any[] = (data && Array.isArray(data.notes)) ? data.notes : [];
+    const data: any = await res.json();
+    const notes: any[] = data && Array.isArray(data.notes) ? data.notes : [];
 
     return notes
-      .filter((n) => includeSystem || !n.system)
+      .filter(
+        (n) =>
+          (includeSystem || !n.system) &&
+          typeof n.body === "string" &&
+          (n.body.includes("⏳") || n.body.includes("🤖"))
+      )
       .map((n) => ({
         id: n.id,
         author: {
