@@ -143,6 +143,7 @@ Run the following steps in the `gitlab-app` directory:
 - `GITLAB_TOKEN`: Personal access token with `api` scope
 - `PORT`: Server port (default: 3000)
 - `REDIS_URL`: Redis connection URL
+- `RATE_LIMITING_ENABLED`: Enable/disable rate limiting (default: true). If set to `false`, Redis is not used and not required.
 - `RATE_LIMIT_MAX`: Max requests per window (default: 3)
 - `RATE_LIMIT_WINDOW`: Time window in seconds (default: 900)
 - `CANCEL_OLD_PIPELINES`: Cancel older pending pipelines (default: true)
@@ -197,7 +198,7 @@ This ensures that:
 - [x] Try moving the comment and commiting logic to a agent tool (Enables custom commit messaages, better comments)
 - [x] Cleanup `@ai` configuration (So that its not needed in both configurations)
 - [x] Create the pipeline on the merge request if the comment is on a merge request
-- [ ] Add option to disable ratelimiting (removes redis dependency)
+- [x] Add option to disable ratelimiting (removes redis dependency)
 - [ ] Add comment thread as context (So that the agent can see the full discussion)
 - [ ] Add a new tool to get the Jira ticket description and comments (So that the agent can see the full ticket)
 - [ ] Provide configuration for the MCP Servers (So that other MCP Servers can be added more easily)
