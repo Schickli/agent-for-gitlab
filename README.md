@@ -204,3 +204,5 @@ This ensures that:
 - [ ] Add a new tool to get the Jira ticket description and comments (So that the agent can see the full ticket)
 - [ ] Provide configuration for the MCP Servers (So that other MCP Servers can be added more easily)
 - [ ] Add the Sonar MCP Server
+- [ ] Evaluate the change to listen on mentioned events instead of all comments
+- [ ] Add cost to the comment (So that the user knows how much it costed)
