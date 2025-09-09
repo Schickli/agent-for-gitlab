@@ -86,7 +86,7 @@ Copy the `.gitlab-ci.yml` file in `gitlab-utils` to your project root, or add th
 
 ### GitLab Webhook App
 
-If the pre-built image is not accessible, you can build it locally.  
+You can run the prebuilt image locally:
 
 > When using it locally, you must expose your local port 3000 to the internet using either ngrok or the built-in port forwarding from VS Code. You must also change it in the webhook configuration.
 
