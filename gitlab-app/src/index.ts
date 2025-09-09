@@ -7,7 +7,7 @@ import {
   createBranch,
   sanitizeBranchName,
   addReactionToNote,
-  getDiscussionThread
+  getDiscussionThread,
 } from "./gitlab";
 import { limitByUser } from "./limiter";
 import { logger } from "./logger";
@@ -120,11 +120,10 @@ app.post("/webhook", async (c) => {
   }
 
   // Enable when we have a dedicated bot user
-  //
-  // if (process.env.AI_GITLAB_USERNAME === authorUsername) {
-  //   logger.warn("Ignoring self-triggered note");
-  //   return c.text("self-trigger");
-  // }
+  if (process.env.AI_GITLAB_USERNAME === authorUsername) {
+    logger.warn("Ignoring self-triggered note");
+    return c.text("self-trigger");
+  }
 
   const resourceId = mrIid || issueIid || "general";
   const key = `${authorUsername}:${projectId}:${resourceId}`;
@@ -205,7 +204,7 @@ app.post("/webhook", async (c) => {
         includeSystem: true,
       });
 
-      logger.info(`Using ${threadNotes.length} discussion thread notes` ,);
+      logger.info(`Using ${threadNotes.length} discussion thread notes`);
 
       if (threadNotes.length > 0) {
         const formatted = threadNotes
@@ -216,7 +215,8 @@ app.post("/webhook", async (c) => {
           })
           .join("\n\n---\n\n");
 
-        aggregatedPrompt = `Conversation Thread (most recent first below separator):\n\n${formatted}\n\n=== User Prompt ===\n${directPrompt}`.trim();
+        aggregatedPrompt =
+          `Conversation Thread (most recent first below separator):\n\n${formatted}\n\n=== User Prompt ===\n${directPrompt}`.trim();
       }
     } catch (err) {
       logger.warn("Failed to aggregate discussion thread", {
@@ -233,7 +233,8 @@ app.post("/webhook", async (c) => {
       original: aggregatedPrompt.length,
       max: MAX_PROMPT_CHARS,
     });
-    aggregatedPrompt = aggregatedPrompt.slice(0, MAX_PROMPT_CHARS) + "\n...[truncated]";
+    aggregatedPrompt =
+      aggregatedPrompt.slice(0, MAX_PROMPT_CHARS) + "\n...[truncated]";
   }
 
   // Create minimal webhook payload for CI/CD variable (10KB limit)
