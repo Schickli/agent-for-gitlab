@@ -1,8 +1,8 @@
-# @AI in GitLab
-
+# `@agent` on Gitlab
 ![Comments Showcase](./docs/assets/header.png)
 
-A lightweight webhook server that listens for `@ai` mentions in GitLab issues and merge requests, then triggers pipelines automatically.
+This is a system that allows you to trigger an agent with the command @agent, which can then search, edit and commit your code, as well as post comments on your GitLab MR or issue.
+The agent runs securely in your pipeline runner.
 
 This project was forked from [RealMikeChong](https://github.com/RealMikeChong/claude-code-for-gitlab). I used his gitlab webhook app and refactored the runner and added MCP & Opencode Support...
 
@@ -11,10 +11,10 @@ This project was forked from [RealMikeChong](https://github.com/RealMikeChong/cl
 - Single webhook endpoint for all projects
 - Triggers pipelines when `@ai` is mentioned in comments (or your custom @)
 - Updates comment with progress (emoji reaction)
-- Configurable rate limiting
+- Configurable rate limiting (or no rl at all)
 - Works with personal access tokens (no OAuth required)
-- Minimal dependencies (Hono + Redis)
 - Docker-ready deployment
+- MCP Server Integration
 
 ## Quick Start
 
@@ -93,24 +93,8 @@ Pull the image from the GitHub Container Registry:
 docker pull ghcr.io/schickli/ai-code-for-gitlab/gitlab-app:latest
 ````
 
-Or build it manually:
-
-```bash
-# Clone the repository
-git clone https://github.com/Schickli/ai-code-for-gitlab.git
-cd ai-code-for-gitlab/gitlab-app
-
-# Run the locally built image
-docker run -d \
-  --name gitlab-ai-webhook-app \
-  -p 3000:3000 \
-  -e GITLAB_TOKEN=glpat-xxxxxxxxxxxxxxxxxxxx \
-  -e WEBHOOK_SECRET=your-webhook-secret-here \
-  gitlab-ai-webhook
-```
-
-**Note:** All configuration options can be seen in `.env.example` or the **Configuration** section.
-**Note:** With this you only build the GitLab Webhook App. You also need to set up a **Redis** container.
+> All configuration options can be seen in `.env.example` or the **Configuration** section.
+> With this you only build the GitLab Webhook App.
 
 #### Using Docker Compose
 
@@ -141,19 +125,23 @@ Run the following steps in the `gitlab-app` directory:
 ### Environment Variables for the GitLab Webhook App (in `.env` or Docker build args)
 
 - `GITLAB_URL`: GitLab instance URL (default: [https://gitlab.com](https://gitlab.com), e.g. [https://gitlab.company.com](https://gitlab.company.com))
-- `GITLAB_TOKEN`: Personal access token with `api` scope
-- `PORT`: Server port (default: 3000)
-- `REDIS_URL`: Redis connection URL
-- `RATE_LIMITING_ENABLED`: Enable/disable rate limiting (default: true). If set to `false`, Redis is not used and not required.
-- `RATE_LIMIT_MAX`: Max requests per window (default: 3)
-- `RATE_LIMIT_WINDOW`: Time window in seconds (default: 900)
-- `CANCEL_OLD_PIPELINES`: Cancel older pending pipelines (default: true)
+- `WEBHOOK_SECRET`: Secret that you set in you Gitlab Webhook configuration
 - `ADMIN_TOKEN`: Optional admin token for `/admin` endpoints
+
+- `GITLAB_TOKEN`: Personal access token with `api` scope
+- `AI_GITLAB_USERNAME`: The GitLab username for the AI user (of the account the Gitlab Token is from)
+- `AI_GITLAB_EMAIL`: The GitLab email for the AI user (of the account the Gitlab Token is from)
+
+- `PORT`: Server port (default: 3000)
+- `CANCEL_OLD_PIPELINES`: Cancel older pending pipelines (default: true)
 - `TRIGGER_PHRASE`: Custom trigger phrase instead of `@ai` (default: `@ai`)
 - `BRANCH_PREFIX`: Prefix for branches created by AI (default: `ai`)
 - `OPENCODE_MODEL`: The model used by opencode in `provider/model` (for azure its the deployment name) form (e.g., `azure/gpt-4.1`)
-- `AI_GITLAB_USERNAME`: The GitLab username for the AI user (of the account the Gitlab Token is from)
-- `AI_GITLAB_EMAIL`: The GitLab email for the AI user (of the account the Gitlab Token is from)
+  
+- `RATE_LIMITING_ENABLED`: Enable/disable rate limiting (default: true). If set to `false`, Redis is not used and not required.
+- `REDIS_URL`: Redis connection URL
+- `RATE_LIMIT_MAX`: Max requests per window (default: 3)
+- `RATE_LIMIT_WINDOW`: Time window in seconds (default: 900)
 
 ### Pipeline Variables (`.gitlab-ci.yml`)
 
@@ -164,7 +152,7 @@ When a pipeline is triggered, these variables are available:
 
 ### GitLab CI/CD Variables (Keys)
 
-Set the appropriate provider key(s) for your chosen `OPENCODE_MODEL` as listed above, plus:
+Set the appropriate `provider key(s)` for your chosen `OPENCODE_MODEL` as listed above, plus:
 
 - `GITLAB_TOKEN`: Your GitLab Personal Access Token (with `api`, `read_repository`, `write_repository` permissions)
 
