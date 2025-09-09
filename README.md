@@ -4,7 +4,7 @@
 This is a system that allows you to trigger an agent with the command @agent, which can then search, edit and commit your code, as well as post comments on your GitLab MR or issue.
 The agent runs securely in your pipeline runner.
 
-This project was forked from [RealMikeChong](https://github.com/RealMikeChong/claude-code-for-gitlab). I used his gitlab webhook app and refactored the runner and added MCP & Opencode Support...
+> This project was forked from [RealMikeChong](https://github.com/RealMikeChong/claude-code-for-gitlab). I used his gitlab webhook app and refactored the runner, added more documentation and added MCP & Opencode Support...
 
 ## Features
 
@@ -29,7 +29,8 @@ To receive comments from GitLab, you need to set up a webhook in your GitLab pro
 Go to your GitLab project settings, then to the **Webhooks** section.  
 Enter `https://your-server.com/webhook` as the URL (replace `your-server.com` with your actual server address).
 
-**Note:** If you are developing locally, use `ngrok` or the built-in port forwarding from VS Code.
+> [!TIP]
+> If you are developing locally, use `ngrok` or the built-in port forwarding from VS Code.
 
 Set a secret token for the webhook (you will need to set this in your GitLab Webhook App).  
 
@@ -75,7 +76,9 @@ You will need to add the following CI/CD variables in your GitLab project (Setti
 
 - `GITLAB_TOKEN`: Your GitLab Personal Access Token (with `api`, `read_repository`, `write_repository` permissions)
 
-**Important:** The variables should not be *protected variables*.  
+> [!CAUTION]
+> The variables should not be *protected variables*.  
+
 Copy the `.gitlab-ci.yml` file in `gitlab-utils` to your project root, or add the important parts to your existing configuration. The pipelines variables can also be added. I strongly recommend adapting the existing Agent Prompt.
 
 - Optional: `OPENCODE_AGENT_PROMPT`: Custom prompt for the opencode agent
@@ -83,9 +86,8 @@ Copy the `.gitlab-ci.yml` file in `gitlab-utils` to your project root, or add th
 ### GitLab Webhook App
 
 If the pre-built image is not accessible, you can build it locally.  
-(When using it locally, you must expose your local port 3000 to the internet using either ngrok or the built-in port forwarding from VS Code. You must also change it in the webhook configuration.)
 
-#### Only the GitLab Webhook App Container
+> When using it locally, you must expose your local port 3000 to the internet using either ngrok or the built-in port forwarding from VS Code. You must also change it in the webhook configuration.
 
 Pull the image from the GitHub Container Registry:
 
