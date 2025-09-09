@@ -1,4 +1,5 @@
 # `@agent` on Gitlab
+
 ![Comments Showcase](./docs/assets/header.png)
 
 This is a system that allows you to trigger an agent with the command @agent, which can then search, edit and commit your code, as well as post comments on your GitLab MR or issue.
