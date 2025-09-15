@@ -276,6 +276,7 @@ app.post("/webhook", async (c) => {
     AI_BRANCH: ref,
     AI_DISCUSSION_ID: discussionId,
     OPENCODE_MODEL: process.env.OPENCODE_MODEL || "azure/gpt-4.1",
+    OPENCODE_AGENT_PROMPT: process.env.OPENCODE_AGENT_PROMPT || "",
     TRIGGER_PHRASE: triggerPhrase,
     DIRECT_PROMPT: aggregatedPrompt,
     GITLAB_WEBHOOK_PAYLOAD: JSON.stringify(minimalPayload),

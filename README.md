@@ -80,9 +80,7 @@ You will need to add the following CI/CD variables in your GitLab project (Setti
 > [!CAUTION]
 > The variables should not be *protected variables*.  
 
-Copy the `.gitlab-ci.yml` file in `gitlab-utils` to your project root, or add the important parts to your existing configuration. The pipelines variables can also be added. I strongly recommend adapting the existing Agent Prompt.
-
-- Optional: `OPENCODE_AGENT_PROMPT`: Custom prompt for the opencode agent
+Copy the `.gitlab-ci.yml` file in `gitlab-utils` to your project root, or add the important parts to your existing configuration. The pipelines variables can also be added. I strongly recommend adapting the existing Agent Prompt. With `CUSTOM_AGENT_PROMPT` you can set repository-specific instructions for the agent. But first look at the default prompt (in the gitlab-app).
 
 ### GitLab Webhook App
 
@@ -130,6 +128,7 @@ Run the following steps in the `gitlab-app` directory:
 - `GITLAB_URL`: GitLab instance URL (default: [https://gitlab.com](https://gitlab.com), e.g. [https://gitlab.company.com](https://gitlab.company.com))
 - `WEBHOOK_SECRET`: Secret that you set in you Gitlab Webhook configuration
 - `ADMIN_TOKEN`: Optional admin token for `/admin` endpoints
+- `OPENCODE_AGENT_PROMPT`: The custom base prompt for the AI agent. (This appends to the Opencode system prompt and prepends the custom pipeline additions if set)
 
 - `GITLAB_TOKEN`: Personal access token with `api` scope
 - `AI_GITLAB_USERNAME`: The GitLab username for the AI user (of the account the Gitlab Token is from)
@@ -150,14 +149,23 @@ Run the following steps in the `gitlab-app` directory:
 
 When a pipeline is triggered, these variables are available:
 
-- `OPENCODE_AGENT_PROMPT`: Optional agent prompt for opencode
 - `AI_AGENT_IMAGE`: The Docker image for the AI agent
+- `CUSTOM_AGENT_PROMPT`: Repository-specific additions to the agent prompt. If set, it is appended to the base prompt defined in the webhook app.
 
 ### GitLab CI/CD Variables (Keys)
 
 Set the appropriate `provider key(s)` for your chosen `OPENCODE_MODEL` as listed above, plus:
 
 - `GITLAB_TOKEN`: Your GitLab Personal Access Token (with `api`, `read_repository`, `write_repository` permissions)
+
+### Agent Prompt Configuration & Combination
+
+1. Base Prompt: Set `OPENCODE_AGENT_PROMPT` in the webhook app.
+2. Pipeline Additions (optional): Define a `CUSTOM_AGENT_PROMPT` variable directly in `.gitlab-ci.yml` or via CI/CD variables. If present, it will be appended to the base prompt.
+3. Combination: When both exist they are merged.
+
+> [!TIP]
+> Keep the base/system behavior prompt in the webhook app and use the pipeline addition only for small repository specific instructions.
 
 ### Admin Endpoints
 

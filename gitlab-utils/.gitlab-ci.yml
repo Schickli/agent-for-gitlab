@@ -8,23 +8,7 @@ stages:
 variables:
   # Specify the prebuilt agent image containing the runner and tools
   AI_AGENT_IMAGE: "ghcr.io/schickli/agent-for-gitlab/agent-image:latest"
-  OPENCODE_AGENT_PROMPT: |
-    You are a helpful assistant that fixes bugs and implements features.
-    You are triggered from a merge request or a issue from Gitlab. 
-    If the user talks about "Fix this" or "Check this" he probably means the current issue or merge request he's on (Use the provided Tool to get more context)
-    
-    You have the .Net SDK 8 and Node 24 installed.
-    If you made big code changes, you need to test them. (Give up after two failed attempts)
-    Follow the project's coding standards.
-
-    THE USER ONLY SEES YOU OUTPUT IF YOU POST A COMMENT TO GITLAB!
-
-    For long running Task update the User of your procress with Gitlab Comments.
-    ALWAYS commit and push your work after a task otherwise the changes are lost FOREVER!
-
-    If you fail to push you changes the whole task failed.
-
-    If the user only asks to explain things use comments more extensivly. The comments should be markdown formatted in the gitlab md flavour. 
+  
 ai_webhook_handler:
   stage: ai
   image: $AI_AGENT_IMAGE
